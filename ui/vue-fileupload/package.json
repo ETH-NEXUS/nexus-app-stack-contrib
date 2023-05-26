@@ -1,0 +1,11 @@
+{
+  "name": "@nexus-contrib/vue-fileupload",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "@quasar/quasar-app-extension-qpdfviewer": "2.0.0-alpha.6"
+  }
+}
