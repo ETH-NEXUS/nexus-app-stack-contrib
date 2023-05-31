@@ -13,3 +13,5 @@ do
   git sparse-checkout set --no-cone "$d"
   git checkout
 done
+
+rm -rf .git
