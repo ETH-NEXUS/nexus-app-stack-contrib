@@ -8,10 +8,7 @@ git clone -n --depth=1 --filter=tree:0 https://"$TOKEN"@$(echo "$BRANCH" | sed -
 
 cd $nexus_contrib_path
 
-for d in "$@"
-do
-  git sparse-checkout set --no-cone "$d"
-  git checkout
-done
+git sparse-checkout set --no-cone "$@"
+git checkout
 
 rm -rf .git
