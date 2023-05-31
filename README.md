@@ -82,7 +82,7 @@ ARG NEXUS_CONTRIB_REPOSITORY_BRANCH
 ARG NEXUS_CONTRIB_DOWNLOAD_SCRIPT
 RUN --mount=type=secret,id=NEXUS_CONTRIB_REPOSITORY_TOKEN \
     export TOKEN=$(cat /run/secrets/NEXUS_CONTRIB_REPOSITORY_TOKEN) BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
-    sh <(wget -q -O - --header="Authorization: token $TOKEN" https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT) \
+    sh <(wget -q -O - --header="Authorization: Bearer $TOKEN" https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT) \
     api/django-feature
 ```
 
