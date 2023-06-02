@@ -70,7 +70,7 @@ Accessing such model objects results in queries like ``SELECT insert_foo(1, 'baz
    DELETE FROM foo WHERE foo.id = $1;
  $$ LANGUAGE SQL;
 
-  ALTER TABLE foo OWNER TO django;
+ ALTER TABLE foo OWNER TO django;
 
 
 Using
