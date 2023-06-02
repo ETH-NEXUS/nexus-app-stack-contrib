@@ -10,6 +10,7 @@ Setup
 An additional database connection and router is required:
 
 .. code-block:: python
+
  DATABASES = {
      'udf': {
          'ENGINE': 'django_udf_model.backends.postgresql',
@@ -26,6 +27,7 @@ An additional database connection and router is required:
 Define a model class with the extra attributes ``function_args``, ``objects``, ``using``, ``db_table`` and ``managed``:
 
 .. code-block:: python
+
  from collections import OrderedDict
  from django.db.models import CharField, Model
  from django_udf_model.query import TableFunctionManager
@@ -46,6 +48,7 @@ Accessing such model objects results in queries like ``SELECT insert_foo(1, 'baz
 ``SELECT update_foo(1, 'zab')`` and ``SELECT * FROM delete_foo(1)``. These functions must be defined manually:
 
 .. code-block:: sql
+
  CREATE TABLE foo (
    id SERIAL4 PRIMARY KEY,
    bar TEXT NOT NULL
@@ -76,6 +79,7 @@ Using
 For example, now this model is fully accessible from the admin site:
 
 .. code-block:: python
+
  from django.contrib import admin
  from models import Foo
 
