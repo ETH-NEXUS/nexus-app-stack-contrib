@@ -121,3 +121,13 @@ You can reference NEXUS contrib code in the <tt>package.json</tt> file like this
 ```
 
 Unfortunately, Yarn does not support references to repository subdirectories.
+
+## Testing
+
+### <tt>download.sh</tt>
+
+```
+TOKEN= \
+  BRANCH=github.com/ETH-NEXUS/nexus-app-stack-contrib.git@main \
+  sh download.sh api/django-feature
+```
