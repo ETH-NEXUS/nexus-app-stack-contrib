@@ -41,7 +41,7 @@ Add the following environment variables to your <tt>.env</tt> file:
 NEXUS_CONTRIB_REPOSITORY_TOKEN=
 NEXUS_CONTRIB_REPOSITORY_BRANCH=github.com/ETH-NEXUS/nexus-app-stack-contrib.git@main
 NEXUS_CONTRIB_DOWNLOAD_SCRIPT=raw.githubusercontent.com/ETH-NEXUS/nexus-app-stack-contrib/main/download.sh
-NEXUS_CONTRIB_BIND=../nexus-app-stack-contrib:/nexus-contrib
+NEXUS_CONTRIB_BIND=../nexus-app-stack-contrib:/nexus-app-stack-contrib
 ```
 
 ### Docker Compose
@@ -99,7 +99,7 @@ relevant for the NEXUS app stack because a code version update must trigger an u
 You can reference NEXUS contrib code in the <tt>requirements.txt</tt> file like this:
 
 ```
-django-feature @ file:///nexus-contrib/api/django-feature
+-e /nexus-app-stack-contrib/api/django-feature
 ```
 
 If you do not need to edit the code locally, you can reference it directly:
@@ -115,7 +115,7 @@ You can reference NEXUS contrib code in the <tt>package.json</tt> file like this
 ```
 {
   "dependencies": {
-    "@nexus-contrib/vue-feature": "link:/nexus-contrib/ui/vue-feature"
+    "@nexus-app-stack-contrib/vue-feature": "link:/nexus-app-stack-contrib/ui/vue-feature"
   }
 }
 ```

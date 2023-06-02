@@ -1,5 +1,5 @@
 {
-  "name": "@nexus-contrib/vue-fileupload",
+  "name": "@nexus-app-stack-contrib/vue-fileupload",
   "version": "0.0.0",
   "description": "",
   "main": "index.js",
