@@ -1,3 +1,4 @@
+# Use this file to setup your integrated development environment (IDE).
 -r django-common/requirements.txt
--r django-udf-model/requirements.txt
 -r django-fileupload/requirements.txt
+-r django-udf-model/requirements.txt

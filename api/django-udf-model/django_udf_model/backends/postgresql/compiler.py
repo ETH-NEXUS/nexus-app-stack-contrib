@@ -35,7 +35,7 @@ def complete_sql(command, c, fields_and_values, values, update_params):
     opts = c.query.get_meta()
     table = opts.db_table
     result = [
-        "SELECT %s_%s" % (command, table), '(', ', '.join(values), ')'
+        'SELECT %s_%s' % (command, table), '(', ', '.join(values), ')'
     ]
     return ''.join(result), tuple(update_params)
 
