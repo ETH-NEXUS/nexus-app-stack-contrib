@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from models import FileUpload, FileUploadBatch
+
+from django_fileupload.models import FileUpload, FileUploadBatch
 
 
 class FileUploadSerializer(serializers.ModelSerializer):
@@ -9,7 +10,7 @@ class FileUploadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileUpload
-        fields = "__all__"
+        fields = ("id", "name")
 
 
 class FileUploadBatchSerializer(serializers.ModelSerializer):
@@ -17,8 +18,8 @@ class FileUploadBatchSerializer(serializers.ModelSerializer):
     Default serializer for a file upload batch record
     """
 
-    files = FileUploadSerializer(many=True)
+    files = FileUploadSerializer(source='fileupload_set', many=True)
 
     class Meta:
         model = FileUploadBatch
-        fields = "__all__"
+        fields = ("id", "uploaded_on", "files")
