@@ -1,0 +1,9 @@
+interface File {
+  id: number
+  name: string
+}
+interface Files {
+  [key: number]: File
+}
+
+export type {Files, File}

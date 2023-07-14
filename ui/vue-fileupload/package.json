@@ -2,10 +2,13 @@
   "name": "@nexus-app-stack-contrib/vue-fileupload",
   "version": "0.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "FileUpload.js",
   "author": "",
   "license": "",
   "dependencies": {
-    "@quasar/quasar-app-extension-qpdfviewer": "2.0.0-alpha.6"
+    "vue": "^3.0.0",
+    "vue-i18n": "^9.2.2",
+    "@vueuse/core": "^10.1.2",
+    "quasar": "^2.6.0"
   }
 }

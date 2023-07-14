@@ -1,0 +1,17 @@
+{
+  "name": "@nexus-app-stack-contrib/vue-viewer",
+  "version": "0.0.0",
+  "description": "",
+  "main": "Viewer.js",
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "vue": "^3.0.0",
+    "vue-i18n": "^9.2.2",
+    "@vueuse/core": "^10.1.2",
+    "quasar": "^2.6.0",
+    "@quasar/extras": "^1.0.0",
+    "@quasar/quasar-app-extension-qmediaplayer": "2.0.0-beta.6",
+    "@quasar/quasar-app-extension-qpdfviewer": "2.0.0-alpha.6"
+  }
+}
