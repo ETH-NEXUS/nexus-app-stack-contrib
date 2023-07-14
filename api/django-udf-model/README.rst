@@ -22,7 +22,7 @@ An additional database connection and router is required:
      }
  }
 
- DATABASE_ROUTERS = ("django_udf_model.models.UdfConnectionRouter",)
+ DATABASE_ROUTERS = ('django_udf_model.models.UdfConnectionRouter',)
 
 Define a model class with the extra attributes ``function_args``, ``objects``, ``using``, ``db_table`` and ``managed``:
 
@@ -84,5 +84,5 @@ For example, now this model is fully accessible from the admin site:
  from models import Foo
 
  @admin.register(Foo)
- class SourceConfigAdmin(admin.ModelAdmin):
+ class FooAdmin(admin.ModelAdmin):
      pass
