@@ -1,5 +1,9 @@
-__pycache__/
+.DS_Store
 
+.idea/
+
+__pycache__/
+Pipfile
 *.egg-info
 
-Pipfile
+node_modules/
