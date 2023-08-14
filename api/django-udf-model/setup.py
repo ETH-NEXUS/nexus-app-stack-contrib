@@ -1,3 +1,7 @@
 from setuptools import setup
 
-setup()
+setup(
+    install_requires=(
+        "Django>=4.2.0",
+    )
+)
