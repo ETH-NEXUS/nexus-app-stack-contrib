@@ -1,24 +1,28 @@
 import hashlib
+import os
+from os.path import basename, join
+
 import magic
-from os.path import join, basename
 from django.db import models
 from django.utils import timezone
+
 from django_common.models import OwnedModel
 
-
-BUF_SIZE = 65536
-
-
-def file_path(instance, filename):
-    """Defines the filepath to store the uploaded file to"""
-    return join(instance.__class__.__name__, str(instance.id), filename)
+BUFFER_SIZE = 65536
 
 
 class FileUploadBatch(OwnedModel):
     uploaded_on = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"Batch {self.id} on {self.uploaded_on} by {self.owner}"
+        return (f"Batch {self.id} ("
+                + " ".join([os.path.basename(f.file.name) for f in FileUpload.objects.filter(batch_id=self.id).all()])
+                + ")")
+
+
+def file_path(instance, filename):
+    """Defines the filepath to store the uploaded file to"""
+    return join(instance.__class__.__name__, str(instance.id), filename)
 
 
 class FileUpload(models.Model):
@@ -27,9 +31,8 @@ class FileUpload(models.Model):
     The model is an owned model means there is always an owner of the record
     which basically is the one that uploads the file
     """
-
     batch = models.ForeignKey(
-        FileUploadBatch, on_delete=models.CASCADE, null=False, blank=False
+        FileUploadBatch, related_name="file_uploads", on_delete=models.CASCADE, null=False, blank=False
     )
     file = models.FileField(upload_to=file_path)
     mime_type = models.CharField(max_length=100, editable=False)
@@ -44,7 +47,7 @@ class FileUpload(models.Model):
 
         with open(self.file.path, "rb") as f:
             while True:
-                data = f.read(BUF_SIZE)
+                data = f.read(BUFFER_SIZE)
                 if not data:
                     break
                 sha256.update(data)

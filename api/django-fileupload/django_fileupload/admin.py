@@ -1,18 +1,13 @@
-from django.contrib import admin
 from datetime import datetime as dt
+
+from django.contrib import admin
 from hurry.filesize import size as hr_size
 
-from .models import FileUploadBatch, FileUpload
+from .models import FileUpload
 
 DATE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-@admin.register(FileUploadBatch)
-class FileUploadBatchAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(FileUpload)
 class FileUploadAdmin(admin.ModelAdmin):
     list_display = (
         "name",
@@ -37,3 +32,21 @@ class FileUploadAdmin(admin.ModelAdmin):
         return file_upload.batch.owner
 
     uploaded_by.short_description = "Uploaded by"
+
+
+class FileUploadAdminInline(admin.TabularInline):
+    model = FileUpload
+    readonly_fields = ("mime_type", "hash")
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    def has_change_permission(self, request, obj):
+        return False
+
+    def has_delete_permission(self, request, obj):
+        return False
+
+
+class FileUploadBatchAdmin(admin.ModelAdmin):
+    inlines = (FileUploadAdminInline,)

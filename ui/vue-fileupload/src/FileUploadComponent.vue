@@ -16,9 +16,13 @@ const props = defineProps({
     validator: v => v === undefined || typeof v === 'object',
     required: true,
   },
+  disable: {
+    type: Boolean,
+    default: () => false,
+  },
   readonly: {
     type: Boolean,
-    required: true,
+    default: () => false,
   },
   hint: {
     type: String,
@@ -116,6 +120,7 @@ const newRules = props.rules.map(f => () => f(files.value))
     :max-file-size="maxFileSize"
     accept="text/csv, text/plain, application/pdf, image/jpeg, image/png, image/gif, image/svg+xml, video/mp4"
     :label="uploadFiles === undefined ? t('label.click_to_add_files') : undefined"
+    :disable="disable"
     :readonly="progress.length > 0"
     outlined
     lazy-rules

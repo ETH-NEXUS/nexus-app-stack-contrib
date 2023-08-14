@@ -6,4 +6,4 @@ interface Files {
   [key: number]: File
 }
 
-export type {Files, File}
+export type {File, Files}

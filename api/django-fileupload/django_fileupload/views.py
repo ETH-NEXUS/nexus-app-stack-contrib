@@ -1,14 +1,16 @@
 from os import path
+
+from django.http import FileResponse
+from django.utils.translation import gettext_lazy as _
 from rest_framework import mixins, viewsets, status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.serializers import ValidationError
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+
 from django_common.renderers import PassthroughRenderer
 from django_fileupload.models import FileUpload, FileUploadBatch
 from django_fileupload.serializers import FileUploadBatchSerializer, FileUploadSerializer
-from django.http import FileResponse
-from rest_framework.response import Response
-from django.utils.translation import gettext_lazy as _
 
 
 class FileUploadBatchViewSet(
@@ -19,11 +21,15 @@ class FileUploadBatchViewSet(
     queryset = FileUploadBatch.objects.all()
     serializer_class = FileUploadBatchSerializer
 
+    def add_metadata(self, request, file_upload_batch):
+        pass
+
     def create(self, request, *args, **kwargs):
         files = request.FILES.getlist("files")
         if files:
             response = []
             batch = FileUploadBatch.objects.create(owner=request.user)
+            self.add_metadata(request, batch)
             for file in files:
                 file_upload = FileUpload.objects.create(batch=batch, file=file)
                 response.append({'id': file_upload.id, 'name': file_upload.name})
