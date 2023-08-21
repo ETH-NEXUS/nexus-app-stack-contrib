@@ -1,2 +1,0 @@
-stream-unzip>=0.0.88
-lxml~=4.9.3
