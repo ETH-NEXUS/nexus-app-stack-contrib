@@ -1,9 +1,11 @@
+import os
 from os import path
 
 from django.http import FileResponse
 from django.utils.translation import gettext_lazy as _
 from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
@@ -20,19 +22,37 @@ class FileUploadBatchViewSet(
 ):
     queryset = FileUploadBatch.objects.all()
     serializer_class = FileUploadBatchSerializer
+    parser_classes = (MultiPartParser,)
 
     def add_metadata(self, request, file_upload_batch):
         pass
+
+    def verify_file_extension(self, request, file_position, file_name_parts):
+        return True
+
+    def verify_file_checksum(self, request, file_position, file_checksum):
+        return True
 
     def create(self, request, *args, **kwargs):
         files = request.FILES.getlist("files")
         if files:
             response = []
-            batch = FileUploadBatch.objects.create(owner=request.user)
-            self.add_metadata(request, batch)
-            for file in files:
-                file_upload = FileUpload.objects.create(batch=batch, file=file)
-                response.append({'id': file_upload.id, 'name': file_upload.name})
+            file_upload_batch = FileUploadBatch.objects.create(owner=request.user)
+            # Metadata needs to be added here as FileUpload.objects.create(...) may depend on it.
+            self.add_metadata(request, file_upload_batch)
+            for file_position, file in enumerate(files):
+                if self.verify_file_extension(request, file_position, os.path.splitext(file.name)):
+                    file_upload = FileUpload.objects.create(
+                        file_upload_batch=file_upload_batch,
+                        position=file_position,
+                        file=file,
+                    )
+                    if self.verify_file_checksum(request, file_position, file_upload.checksum):
+                        response.append({'id': file_upload.id, 'name': file_upload.name})
+                        continue
+                    raise ValidationError(_("Bad or no checksums in the request."))
+                raise ValidationError(_("File extension does not match."))
+
             return Response(response, status=status.HTTP_201_CREATED)
 
         raise ValidationError(_("No files in the request."))
