@@ -5,7 +5,7 @@ from django.core.management import BaseCommand
 class Command(BaseCommand):
     """
     Example:
-        # python -m django deleteuser --username foo
+        # python -m django delete_user --username foo
     """
 
     def __init__(self, *args, **kwargs):

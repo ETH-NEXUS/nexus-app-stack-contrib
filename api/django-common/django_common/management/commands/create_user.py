@@ -14,7 +14,7 @@ GROUPS = "groups"
 class Command(BaseCommand):
     """
     Example:
-        # DJANGO_USER_PASSWORD=bar python -m django createuser --username foo --email foo@bar.baz --groups foo bar baz
+        # DJANGO_USER_PASSWORD=123 python -m django create_user --username foo --email foo@bar.baz --groups foo bar baz
     """
 
     def __init__(self, *args, **kwargs):
@@ -27,7 +27,7 @@ class Command(BaseCommand):
             parser.add_argument("--%s" % required_field, required=True)
         parser.add_argument("--%s" % GROUPS, nargs="*")
 
-    def handle(self, *args, **options):
+    def create_user(self, *args, **options):
         kwargs = {
             self.UserModel.USERNAME_FIELD: options[self.UserModel.USERNAME_FIELD],
             PASSWORD_FIELD: os.environ[USER_PASSWORD_ENVIRONMENT_VARIABLE],
@@ -35,9 +35,15 @@ class Command(BaseCommand):
         for required_field in self.UserModel.REQUIRED_FIELDS:
             kwargs[required_field] = options[required_field]
 
-        with transaction.atomic():
-            user = self.UserModel.objects.create_user(**kwargs)
+        user = self.UserModel.objects.create_user(**kwargs)
 
+        if options[GROUPS]:
             for group in options[GROUPS]:
                 group = Group.objects.get(name=group)
                 user.groups.add(group)
+
+        return user
+
+    def handle(self, *args, **options):
+        with transaction.atomic():
+            self.create_user(*args, **options)
