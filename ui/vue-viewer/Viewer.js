@@ -1,8 +1,7 @@
-// TODO
-//import QPdfviewer from '@quasar/quasar-app-extension-qpdfviewer/src/component/QPdfviewer'
+import QPdfviewer from '@quasar/quasar-app-extension-qpdfviewer/src/component/QPdfviewer'
 import '@quasar/extras/material-icons/material-icons.css'
-// TODO
-//import QMediaPlayer from '@quasar/quasar-ui-qmediaplayer/src/QMediaPlayer'
+
+import QMediaPlayer from '@quasar/quasar-ui-qmediaplayer/src/QMediaPlayer'
 import '@quasar/quasar-ui-qmediaplayer/src/index.sass'
 import ViewerComponent from './src/ViewerComponent.vue'
 
