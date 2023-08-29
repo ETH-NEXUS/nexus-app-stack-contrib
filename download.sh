@@ -13,4 +13,7 @@ git checkout
 
 ls -d "$@" > /dev/null
 
-rm -rf .git
+if [ "$ENVIRONMENT" = "Production" ]
+then
+  rm -rf .git
+fi
