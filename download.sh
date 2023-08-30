@@ -20,7 +20,7 @@ case "$@" in
     ;;
 esac
 
-git sparse-checkout set "$cone_pattern_set"
+git sparse-checkout set $cone_pattern_set
 git checkout
 
 ls -d "$@" > /dev/null
