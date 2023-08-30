@@ -8,19 +8,25 @@ git clone -n --depth=1 --filter=tree:0 https://"$TOKEN"@$(echo "$BRANCH" | sed -
 
 cd $nexus_app_stack_contrib_path
 
-case "$@" in
-  api/*)
-    cone_pattern_set="/api/* !/api/*/ $@"
+cone_pattern_set=$*
+
+case $* in
+  "api/"*|*" api/"*)
+    cone_pattern_set="/api/* !/api/*/ $cone_pattern_set"
     ;;
-  cli/*)
-    cone_pattern_set="/cli/* !/cli/*/ $@"
+esac
+case $* in
+  "cli/"*|*" cli/"*)
+    cone_pattern_set="/cli/* !/cli/*/ $cone_pattern_set"
     ;;
-  ui/*)
-    cone_pattern_set="/ui/* !/ui/*/ $@"
+esac
+case $* in
+  "ui/"*|*" ui/"*)
+    cone_pattern_set="/ui/* !/ui/*/ $cone_pattern_set"
     ;;
 esac
 
-git sparse-checkout set $cone_pattern_set
+git sparse-checkout set --no-cone $cone_pattern_set
 git checkout
 
 ls -d "$@" > /dev/null
