@@ -55,6 +55,7 @@ services:
   service1:
     build:
       args:
+        ENVIRONMENT: "Production"
         NEXUS_CONTRIB_REPOSITORY_BRANCH: "$NEXUS_CONTRIB_REPOSITORY_BRANCH"
         NEXUS_CONTRIB_DOWNLOAD_SCRIPT: "$NEXUS_CONTRIB_DOWNLOAD_SCRIPT"
       secrets:
@@ -78,10 +79,11 @@ RUN apk add --update --no-cache git
 Additionally, integrate the following lines in your Dockerfiles:
 
 ```
+ARG ENVIRONMENT
 ARG NEXUS_CONTRIB_REPOSITORY_BRANCH
 ARG NEXUS_CONTRIB_DOWNLOAD_SCRIPT
 RUN --mount=type=secret,id=NEXUS_CONTRIB_REPOSITORY_TOKEN \
-    export TOKEN=$(cat /run/secrets/NEXUS_CONTRIB_REPOSITORY_TOKEN) BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
+    export ENVIRONMENT=$ENVIRONMENT TOKEN=$(cat /run/secrets/NEXUS_CONTRIB_REPOSITORY_TOKEN) BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
     sh <(wget -q -O - --header="Authorization: Bearer $TOKEN" https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
     api/django-feature
 ```
