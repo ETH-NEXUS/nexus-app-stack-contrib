@@ -27,6 +27,9 @@ class FileUploadBatchViewSet(
     def add_metadata(self, request, file_upload_batch):
         pass
 
+    def verify_file_count(self, request, count):
+        return True
+
     def verify_file_extension(self, request, file_position, file_name_parts):
         return True
 
@@ -35,7 +38,7 @@ class FileUploadBatchViewSet(
 
     def create(self, request, *args, **kwargs):
         files = request.FILES.getlist("files")
-        if files:
+        if files and self.verify_file_count(request, len(files)):
             response = []
             file_upload_batch = FileUploadBatch.objects.create(owner=request.user)
             # Metadata needs to be added here as FileUpload.objects.create(...) may depend on it.
