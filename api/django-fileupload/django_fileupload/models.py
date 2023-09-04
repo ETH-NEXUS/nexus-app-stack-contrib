@@ -2,6 +2,7 @@ import os
 from os.path import basename, join
 
 import magic
+from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.utils import timezone
 
@@ -21,6 +22,12 @@ class FileUploadBatch(OwnedModel):
         return f"Batch {self.id} ({file_uploads_list})"
 
 
+class FileUploadFileStorage(FileSystemStorage):
+
+    def get_alternative_name(self, file_root, file_ext):
+        raise FileExistsError
+
+
 def file_path(instance, filename):
     """Defines the filepath to store the uploaded file to"""
     return join(instance.__class__.__name__, str(instance.id), filename)
@@ -36,7 +43,7 @@ class FileUpload(models.Model):
         FileUploadBatch, related_name="file_uploads", on_delete=models.CASCADE, null=False, blank=False
     )
     position = models.PositiveSmallIntegerField()
-    file = models.FileField(upload_to=file_path)
+    file = models.FileField(upload_to=file_path, storage=FileUploadFileStorage())
     mime_type = models.CharField(max_length=100, editable=False)
     checksum = models.CharField(max_length=64, editable=False)
 
