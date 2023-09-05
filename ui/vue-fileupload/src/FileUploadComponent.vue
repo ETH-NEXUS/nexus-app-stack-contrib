@@ -16,6 +16,19 @@ const props = defineProps({
     validator: v => v === undefined || typeof v === 'object',
     required: true,
   },
+  acceptedMimeTypes: {
+    type: Array<string>,
+    default: () => [
+      'application/pdf',
+      'image/gif',
+      'image/jpeg',
+      'image/png',
+      'image/svg+xml',
+      'text/csv',
+      'text/plain',
+      'video/mp4',
+    ],
+  },
   disable: {
     type: Boolean,
     default: () => false,
@@ -118,7 +131,7 @@ const newRules = props.rules.map(f => () => f(files.value))
     counter
     :max-files="maxFiles"
     :max-file-size="maxFileSize"
-    accept="text/csv, text/plain, application/pdf, image/jpeg, image/png, image/gif, image/svg+xml, video/mp4"
+    :accept="acceptedMimeTypes.join(', ')"
     :label="uploadFiles === undefined ? t('label.click_to_add_files') : undefined"
     :disable="disable"
     :readonly="progress.length > 0"
