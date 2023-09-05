@@ -2,9 +2,10 @@
   "name": "@nexus-app-stack-contrib/vue-viewer",
   "version": "0.0.0",
   "description": "",
-  "main": "Viewer.js",
-  "author": "",
+  "author": "NEXUS Personalized Health Technologies",
   "license": "",
+  "private": true,
+  "main": "Viewer.js",
   "dependencies": {
     "vue": "^3.0.0",
     "vue-i18n": "^9.2.2",

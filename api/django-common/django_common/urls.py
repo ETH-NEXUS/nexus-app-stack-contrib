@@ -18,6 +18,6 @@ def static_path(prefix, view=serve, **kwargs):
 def protected_serve(request, path, document_root=None, show_indexes=False):
     """
     Example:
-    urlpatterns = (...) + static_path(settings.MEDIA_URL, protected_serve, document_root=settings.MEDIA_ROOT)
+        urlpatterns = (...) + static_path(settings.MEDIA_URL, protected_serve, document_root=settings.MEDIA_ROOT)
     """
     return serve(request, path, document_root, show_indexes)
