@@ -32,3 +32,4 @@ class UdfModel(Model):
     class Meta:
         abstract = True
         managed = False
+        base_manager_name = "objects"
