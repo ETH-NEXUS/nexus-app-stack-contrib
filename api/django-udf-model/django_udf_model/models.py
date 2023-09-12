@@ -26,10 +26,12 @@ class UdfConnectionRouter:
 
 
 class UdfModel(Model):
+    using = "udf"
     function_args = OrderedDict()
     objects = TableFunctionManager()
 
     class Meta:
+        # TODO Generate "db_table" out of the class name.
         abstract = True
         managed = False
         base_manager_name = "objects"
