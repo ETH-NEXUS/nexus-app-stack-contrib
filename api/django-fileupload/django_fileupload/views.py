@@ -20,6 +20,8 @@ class FileUploadBatchViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
+    permission_classes = (IsAuthenticated,)
+    swagger_schema = None
     queryset = FileUploadBatch.objects.all()
     serializer_class = FileUploadBatchSerializer
     parser_classes = (MultiPartParser,)
@@ -68,6 +70,7 @@ class FileUploadViewSet(
     viewsets.GenericViewSet,
 ):
     permission_classes = (IsAuthenticated,)
+    swagger_schema = None
     queryset = FileUpload.objects.all()
     serializer_class = FileUploadSerializer
 

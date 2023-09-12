@@ -18,7 +18,15 @@ from .permissions import IsOwnUser
 from .serializers import UserSerializer
 
 
-class VersionView(views.APIView):
+class AppApiView(views.APIView):
+    swagger_schema = None
+
+
+class GenericAppViewSet(viewsets.GenericViewSet, AppApiView):
+    pass
+
+
+class VersionView(AppApiView):
     @staticmethod
     def get(request):
         return Response({"version": environ.get("GIT_VERSION") or "𝛼"})
@@ -66,7 +74,7 @@ class LogoutView(View):
         return JsonResponse({"detail": _("Successfully logged out.")})
 
 
-class UserViewSet(viewsets.GenericViewSet):
+class UserViewSet(GenericAppViewSet):
     permission_classes = (IsOwnUser,)
     queryset = get_user_model().objects.all()
     serializer_class = UserSerializer
