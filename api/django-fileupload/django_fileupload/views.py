@@ -17,11 +17,9 @@ from django_fileupload.serializers import FileUploadBatchSerializer, FileUploadS
 
 class FileUploadBatchViewSet(
     mixins.CreateModelMixin,
-    mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
     permission_classes = (IsAuthenticated,)
-    swagger_schema = None
     queryset = FileUploadBatch.objects.all()
     serializer_class = FileUploadBatchSerializer
     parser_classes = (MultiPartParser,)
@@ -70,11 +68,10 @@ class FileUploadViewSet(
     viewsets.GenericViewSet,
 ):
     permission_classes = (IsAuthenticated,)
-    swagger_schema = None
     queryset = FileUpload.objects.all()
     serializer_class = FileUploadSerializer
 
-    @action(detail=True, methods=["get"], renderer_classes=(PassthroughRenderer,))
+    @action(detail=True, methods=("get",), renderer_classes=(PassthroughRenderer,))
     def download(self, request, *args, **kwargs):
         file_upload: FileUpload = self.get_object()
         response = FileResponse(file_upload.file.open(), content_type=file_upload.mime_type)

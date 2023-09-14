@@ -18,8 +18,9 @@ class FileUploadBatchSerializer(serializers.ModelSerializer):
     Default serializer for a file upload batch record
     """
 
-    files = FileUploadSerializer(source='fileupload_set', many=True)
+    # TODO Does not work with Swagger.
+    # files = FileUploadSerializer(source='fileupload_set', many=True)
 
     class Meta:
         model = FileUploadBatch
-        fields = ("id", "uploaded_on", "files")
+        fields = ("id",)
