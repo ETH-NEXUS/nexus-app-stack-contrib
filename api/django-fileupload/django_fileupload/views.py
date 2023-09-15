@@ -27,23 +27,23 @@ class FileUploadBatchViewSet(
     def add_metadata(self, request, file_upload_batch):
         pass
 
-    def verify_file_count(self, request, count):
-        return True
-
     def verify_file_extension(self, request, file_position, file_name_parts):
         return True
 
     def verify_file_checksum(self, request, file_position, file_checksum):
         return True
 
+    def verify_file_count(self, request, count):
+        return True
+
     def create(self, request, *args, **kwargs):
-        files = request.FILES.getlist("files")
-        if files and self.verify_file_count(request, len(files)):
+        if request.FILES:
             response = []
+            file_position = 0
             file_upload_batch = FileUploadBatch.objects.create(owner=request.user)
             # Metadata needs to be added here as FileUpload.objects.create(...) may depend on it.
             self.add_metadata(request, file_upload_batch)
-            for file_position, file in enumerate(files):
+            for file in request.FILES.getlist("files"):
                 if self.verify_file_extension(request, file_position, os.path.splitext(file.name)):
                     file_upload = FileUpload.objects.create(
                         file_upload_batch=file_upload_batch,
@@ -52,11 +52,15 @@ class FileUploadBatchViewSet(
                     )
                     if self.verify_file_checksum(request, file_position, file_upload.checksum):
                         response.append({'id': file_upload.id, 'name': file_upload.name})
+                        file_position += 1
                         continue
-                    raise ValidationError(_("Bad or no checksums in the request."))
-                raise ValidationError(_("File extension does not match."))
+                    raise ValidationError(_("Incorrect or no checksums in the request."))
+                raise ValidationError(_("Files with incorrect extension in the request."))
 
-            return Response(response, status=status.HTTP_201_CREATED)
+            if self.verify_file_count(request, file_position):
+                return Response(response, status=status.HTTP_201_CREATED)
+
+            raise ValidationError(_("Incorrect number of files in the request."))
 
         raise ValidationError(_("No files in the request."))
 
