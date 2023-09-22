@@ -99,7 +99,7 @@ class TableFunctionQuery(Query):
                     # so try to call the function without parameters
                     # in case that they are optional
                     params = []
-                alias = self.join(TableFunction('select_' + self.get_meta().db_table, None, params))
+                alias = self.join(TableFunction(self.get_meta().db_table, None, params))
             else:
                 # TODO Why not call "super().get_initial_alias()" instead?
                 alias = self.join(BaseTable(self.get_meta().db_table, None))
@@ -138,7 +138,7 @@ class TableFunctionQuery(Query):
                 resolved_params.append(resolved_param)
 
             self.alias_map[alias] = TableFunctionJoin(
-                'select_' + join.table_name, join.parent_alias, join.table_alias, join.join_type, join.join_field,
+                join.table_name, join.parent_alias, join.table_alias, join.join_type, join.join_field,
                 join.nullable, join.filtered_relation, resolved_params
             )
 
