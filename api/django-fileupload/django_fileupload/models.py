@@ -44,7 +44,7 @@ class FileUpload(models.Model):
     )
     position = models.PositiveSmallIntegerField()
     file = models.FileField(upload_to=file_path, storage=FileUploadFileStorage())
-    mime_type = models.CharField(max_length=100, editable=False)
+    detected_mime_type = models.CharField(max_length=100, editable=False)
     checksum = models.CharField(max_length=64, editable=False)
 
     def __str__(self):
@@ -73,8 +73,8 @@ class FileUpload(models.Model):
         else:
             super().save(*args, **kwargs)
         self.checksum = generate_checksum(self.file.path)
-        self.mime_type = magic.from_file(self.path, mime=True)
-        super().save(update_fields=("checksum", "mime_type"))
+        self.detected_mime_type = magic.from_file(self.path, mime=True)
+        super().save(update_fields=("detected_mime_type", "checksum"))
 
     class Meta:
         constraints = (

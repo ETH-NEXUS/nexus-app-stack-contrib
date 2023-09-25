@@ -78,7 +78,7 @@ class FileUploadViewSet(
     @action(detail=True, methods=("get",), renderer_classes=(PassthroughRenderer,))
     def download(self, request, *args, **kwargs):
         file_upload: FileUpload = self.get_object()
-        response = FileResponse(file_upload.file.open(), content_type=file_upload.mime_type)
+        response = FileResponse(file_upload.file.open(), content_type=file_upload.detected_mime_type)
         response["Content-Length"] = file_upload.file.size
         response["Content-Disposition"] = 'attachment; filename="%s"' % path.basename(file_upload.file.name)
         return response

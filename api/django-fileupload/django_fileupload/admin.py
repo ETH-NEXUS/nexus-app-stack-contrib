@@ -36,7 +36,7 @@ class FileUploadAdmin(admin.ModelAdmin):
 
 class FileUploadAdminInline(admin.TabularInline):
     model = FileUpload
-    readonly_fields = ("mime_type", "checksum")
+    readonly_fields = ("detected_mime_type", "checksum")
 
     def has_add_permission(self, request, obj):
         return False
