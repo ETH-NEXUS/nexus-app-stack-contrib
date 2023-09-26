@@ -10,7 +10,7 @@ class FileUploadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileUpload
-        fields = ("id", "name")
+        fields = ("id", "name", "checksum")
 
 
 class FileUploadBatchSerializer(serializers.ModelSerializer):
