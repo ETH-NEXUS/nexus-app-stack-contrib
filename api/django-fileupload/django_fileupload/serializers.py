@@ -5,7 +5,7 @@ from django_fileupload.models import FileUpload, FileUploadBatch
 
 class FileUploadSerializer(serializers.ModelSerializer):
     """
-    Default serializer for a file upload record
+    Default serializer for a file upload record.
     """
 
     class Meta:
@@ -15,12 +15,24 @@ class FileUploadSerializer(serializers.ModelSerializer):
 
 class FileUploadBatchSerializer(serializers.ModelSerializer):
     """
-    Default serializer for a file upload batch record
+    Default serializer for a file upload batch record.
     """
 
-    # TODO Does not work with Swagger.
-    # files = FileUploadSerializer(source='fileupload_set', many=True)
+    file_uploads = FileUploadSerializer(read_only=True, many=True)
 
     class Meta:
         model = FileUploadBatch
-        fields = ("id",)
+        fields = ("file_uploads",)
+
+
+class DrfYasgWorkaroundFileUploadBatchSerializer(serializers.ModelSerializer):
+    """
+    Swagger workaround serializer for a file upload batch record.
+    """
+
+    # TODO Does not work with Swagger.
+    # file_uploads = FileUploadSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = FileUploadBatch
+        fields = ()

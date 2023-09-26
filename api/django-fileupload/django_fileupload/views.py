@@ -12,7 +12,8 @@ from rest_framework.serializers import ValidationError
 
 from django_common.renderers import PassthroughRenderer
 from django_fileupload.models import FileUpload, FileUploadBatch
-from django_fileupload.serializers import FileUploadBatchSerializer, FileUploadSerializer
+from django_fileupload.serializers import (DrfYasgWorkaroundFileUploadBatchSerializer, FileUploadBatchSerializer,
+                                           FileUploadSerializer)
 
 
 class FileUploadBatchViewSet(
@@ -23,6 +24,12 @@ class FileUploadBatchViewSet(
     queryset = FileUploadBatch.objects.all()
     serializer_class = FileUploadBatchSerializer
     parser_classes = (MultiPartParser,)
+
+    # Workaround for "drf-yasg" (see https://github.com/axnsan12/drf-yasg/issues/503).
+    def get_serializer_class(self):
+        if self.action == "create":
+            return DrfYasgWorkaroundFileUploadBatchSerializer
+        return self.serializer_class
 
     def add_metadata(self, request, file_upload_batch):
         pass

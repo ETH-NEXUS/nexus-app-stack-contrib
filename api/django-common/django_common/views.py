@@ -9,6 +9,7 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import View
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework import views
 from rest_framework.decorators import action
@@ -18,6 +19,7 @@ from .permissions import IsOwnUser
 from .serializers import UserSerializer
 
 
+@extend_schema(exclude=True)
 class AppApiView(views.APIView):
     swagger_schema = None
 
