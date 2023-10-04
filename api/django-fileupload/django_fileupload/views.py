@@ -37,7 +37,7 @@ class FileUploadBatchViewSet(
     def verify_file_extension(self, request, file_position, file_name_parts):
         return True
 
-    def verify_file_checksum(self, request, file_position, file_checksum):
+    def verify_file_checksum(self, request, file_position, file_name_parts, file_checksum):
         return True
 
     def verify_file_count(self, request, count):
@@ -51,13 +51,14 @@ class FileUploadBatchViewSet(
             # Metadata needs to be added here as FileUpload.objects.create(...) may depend on it.
             self.add_metadata(request, file_upload_batch)
             for file in request.FILES.getlist("files"):
-                if self.verify_file_extension(request, file_position, os.path.splitext(file.name)):
+                file_name_parts = os.path.splitext(file.name)
+                if self.verify_file_extension(request, file_position, file_name_parts):
                     file_upload = FileUpload.objects.create(
                         file_upload_batch=file_upload_batch,
                         position=file_position,
                         file=file,
                     )
-                    if self.verify_file_checksum(request, file_position, file_upload.checksum):
+                    if self.verify_file_checksum(request, file_position, file_name_parts, file_upload.checksum):
                         response.append({'id': file_upload.id, 'name': file_upload.name})
                         file_position += 1
                         continue

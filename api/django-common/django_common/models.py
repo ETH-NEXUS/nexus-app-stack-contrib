@@ -29,7 +29,8 @@ class MimeType(models.TextChoices):
     PLAIN = "plain", "text/plain"
     CSV = "csv", "text/csv"
     TSV = "tsv", "text/tab-separated-values"
-    EXCEL = "xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    XLSX = "xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    XLS = "xls", "application/vnd.ms-excel"
     FASTA = "fasta", "text/x-fasta"
     # TODO Correct?
     CHAIN = "chain", "text/chain"
