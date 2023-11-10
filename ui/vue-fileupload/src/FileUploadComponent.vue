@@ -53,7 +53,11 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['addFile', 'downloadFile', 'removeFile'])
+const emit = defineEmits<{
+  (event: 'addFile', files: Files, progress: (fraction: number) => void, done: (file: File) => void): void
+  (event: 'downloadFile', file: File): void
+  (event: 'removeFile', file: File, done: () => void): void
+}>()
 
 const files = ref(props.files)
 const initialFiles = files.value === null ? [] : [...files.value]
@@ -107,10 +111,11 @@ const confirmRemove = (k: number) => {
 
 const remove = (k: number) => {
   const file = files.value[k]
-  delete initialFiles[k]
-  delete files.value[k]
-  maxFiles.value += 1
-  emit('removeFile', file)
+  emit('removeFile', file, () => {
+    delete initialFiles[k]
+    delete files.value[k]
+    maxFiles.value += 1
+  })
 }
 
 const download = (file: File) => {
