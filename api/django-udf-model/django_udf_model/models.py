@@ -15,9 +15,7 @@ class UdfConnectionRouter:
         return "default"
 
     def allow_relation(self, obj1, obj2, **hints):
-        if not hasattr(obj1, "using") and not hasattr(obj2, "using"):
-            return True
-        return False
+        return True
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         if db == "default":

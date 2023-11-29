@@ -48,8 +48,9 @@ class TableFunctionJoin(Join):
 
         # extract `on_clause_sql` from ancestor's complex compiled query logic
         # to be able pass function instead of normal table into sql easily
-        result = re.match('.+?join.+?on(?P<on_clause_sql>.+)', sql, re.IGNORECASE | re.DOTALL)
-        on_clause_sql = result.group('on_clause_sql')
+        # result = re.match('.+ join .+ on (?P<on_clause_sql>.+)', sql, re.IGNORECASE | re.DOTALL)
+        # on_clause_sql = result.group('on_clause_sql')
+        alias_and_on_clause_sql = sql[sql.find(" JOIN ") + 6:]
 
         table_function_placeholders = []
         table_function_params = []
@@ -62,12 +63,11 @@ class TableFunctionJoin(Join):
             table_function_placeholders.append(param_sql)
             table_function_params += param_params
 
-        sql = '{} {}({}) {} ON ({})'.format(
+        sql = '{} {}({}) {}'.format(
             self.join_type,
             compiler.quote_name_unless_alias(self.table_name),
             ', '.join(table_function_placeholders),
-            self.table_alias,
-            on_clause_sql
+            alias_and_on_clause_sql
         )
         return sql, table_function_params + params
 
