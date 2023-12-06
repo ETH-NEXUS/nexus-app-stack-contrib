@@ -105,9 +105,8 @@ class TableFunctionQuery(Query):
                 alias = self.join(BaseTable(self.get_meta().db_table, None))
         return alias
 
-    def setup_joins(self, names, opts, alias, can_reuse=None, allow_many=True,
-                    reuse_with_filtered_relation=False):
-        join_info = super().setup_joins(names, opts, alias, can_reuse, allow_many, reuse_with_filtered_relation)
+    def setup_joins(self, names, opts, alias, can_reuse=None, allow_many=True):
+        join_info = super().setup_joins(names, opts, alias, can_reuse, allow_many)
 
         level = 0
         for alias in join_info.joins:
