@@ -5,6 +5,18 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+def model_with_custom_manager(model_class, manager_instance):
+    class Proxy(model_class):
+        objects = manager_instance
+
+        class Meta:
+            proxy = True
+            # TODO Really not necessary?
+            # app_label = model_class._meta.app_label
+
+    return Proxy
+
+
 class OwnedModel(models.Model):
     """
     A model that has a relationship to the owner in the user model.

@@ -33,3 +33,15 @@ class UdfModel(Model):
         abstract = True
         managed = False
         base_manager_name = "objects"
+
+
+def model_with_udf_manager(model_class):
+    class Proxy(model_class):
+        objects = TableFunctionManager()
+
+        class Meta:
+            proxy = True
+            # TODO Really not necessary?
+            # app_label = model_class._meta.app_label
+
+    return Proxy
