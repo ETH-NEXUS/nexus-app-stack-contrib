@@ -36,15 +36,13 @@ class TableFunction(BaseTable):
 
 class TableFunctionJoin(Join):
     def __init__(self, table_name, parent_alias, table_alias, join_type,
-                 join_field, nullable, filtered_relation=None, table_function_params: List[Any] = None):
+                 join_field, nullable, filtered_relation=None, table_function_params: List[Any] = ()):
         super().__init__(table_name, parent_alias, table_alias, join_type,
                          join_field, nullable, filtered_relation)
         self.table_function_params = table_function_params  # type: List[Any]
 
     def as_sql(self, compiler, connection):
         sql, params = super().as_sql(compiler, connection)
-        if self.table_function_params is None:
-            return sql, params  # normal table join
 
         # extract `on_clause_sql` from ancestor's complex compiled query logic
         # to be able pass function instead of normal table into sql easily
@@ -113,7 +111,7 @@ class TableFunctionQuery(Query):
             join = self.alias_map[alias]
             if isinstance(join, TableFunction):
                 continue  # skip the `FROM func(...)`, it is handled in `get_initial_alias`
-            if not hasattr(join.join_field.related_model, 'function_args'):
+            if not hasattr(join, 'join_field') or not hasattr(join.join_field.related_model, 'function_args'):
                 continue  # skip normal tables
 
             level += 1
