@@ -16,6 +16,10 @@ const props = defineProps({
     validator: v => v === undefined || typeof v === 'object',
     required: true,
   },
+  maxFiles: {
+    type: Number,
+    default: () => 10,
+  },
   acceptedMimeTypes: {
     type: Array<string>,
     default: () => [
@@ -62,8 +66,8 @@ const emit = defineEmits<{
 const files = ref(props.files)
 const initialFiles = files.value === null ? [] : [...files.value]
 const uploadFiles = ref<[] | undefined>(undefined)
-const maxFiles = ref(10 - Object.keys(initialFiles).length)
-const maxFileSize = ref(Number(import.meta.env.VITE_APP_HARD_UPLOAD_SIZE_LIMIT) / 10)
+const maxFiles = ref(props.maxFiles - Object.keys(initialFiles).length)
+const maxFileSize = ref(Number(import.meta.env.VITE_APP_HARD_UPLOAD_SIZE_LIMIT) / props.maxFiles)
 const confirm = ref(false)
 const key = ref<number>()
 
@@ -88,7 +92,7 @@ const add = () => {
       let fileCount = uploadFiles.value ? uploadFiles.value.length : 0
       if (fraction == 1) {
         uploadFiles.value = undefined
-        maxFiles.value -= 1
+        maxFiles.value -= fileCount
         progress.value = []
       } else {
         let index = Math.floor(fraction * fileCount)
