@@ -4,6 +4,7 @@ from datetime import datetime
 from email.mime.image import MIMEImage
 from os import environ
 
+import pytz
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template import Context
@@ -62,5 +63,5 @@ class Emailer:
             cc_emails=", ".join(cc_emails),
             subject=subject,
             html_message=html_message,
-            sent_at=datetime.now() if number_email_sent > 0 else None,
+            sent_at=datetime.now(pytz.timezone('Europe/Zurich')) if number_email_sent > 0 else None,
         )
