@@ -1,9 +1,9 @@
 {% extends "notifications/base.html" %}
 
-{% block title %}<span hidden>[{{ project_name }}] </span>{{ program_name }} error{% endblock %}
+{% block title %}{{ program_name }} error{% endblock %}
 
 {% block content %}
-<p>{{ program_name }} terminated with the following error message:</p>
+<p>{{ program_name }} program terminated with the following error message:</p>
 <pre>{{ error_message }}</pre>
 <p><strong>Note: The program will not be restarted.</strong></p>
 {% endblock %}

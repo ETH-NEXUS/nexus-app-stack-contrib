@@ -24,14 +24,15 @@ class Emailer:
             elif hasattr(node, "nodelist"):
                 return self._depth_first_search(node.nodelist, got_it)
 
-    def send_using_template(self, subject, template_name, context, images, cc_emails, to_emails):
+    def send_using_template(self, subject_text, template_name, context, images, cc_emails, to_emails):
         template = get_template(template_name)
-        if subject is None:
+        if subject_text is None:
             title_node = self._depth_first_search(template.template.nodelist,
                                                   lambda n: isinstance(n, BlockNode) and n.name == "title")
             if title_node is not None:
-                subject = re.sub("<.*?>", "", title_node.render(Context(context)))
-        self.send(subject, template.render(context), images, cc_emails, to_emails)
+                subject_text = re.sub("<.*?>", "", title_node.render(Context(context)))
+        self.send(f"[{context['project_name']}]" + f" {subject_text}" if subject_text else "", template.render(context),
+                  images, cc_emails, to_emails)
 
     def send(self, subject, html_message, images, cc_emails, to_emails):
         logger.debug(f"Sending email with subject {subject} from {settings.EMAIL_FROM} to {to_emails}, cc {cc_emails}.")
