@@ -1,4 +1,4 @@
-from django_common.utilities import call_all_except_first_base_class_methods_until_not_none
+from django_common.utilities import call_method_of_all_base_class_after_myself_until_not_none
 
 
 class AppLabelConnectionRouter:
@@ -41,17 +41,40 @@ class DefaultConnectionRouter:
 
 class CakeConnectionRouter:
     def db_for_read(self, model, **hints):
-        return call_all_except_first_base_class_methods_until_not_none(self, "db_for_read", model,
-                                                                       **hints)
+        return call_method_of_all_base_class_after_myself_until_not_none(
+            CakeConnectionRouter,
+            self,
+            "db_for_read",
+            model,
+            **hints
+        )
 
     def db_for_write(self, model, **hints):
-        return call_all_except_first_base_class_methods_until_not_none(self, "db_for_write", model,
-                                                                       **hints)
+        return call_method_of_all_base_class_after_myself_until_not_none(
+            CakeConnectionRouter,
+            self,
+            "db_for_write",
+            model,
+            **hints
+        )
 
     def allow_relation(self, obj1, obj2, **hints):
-        return call_all_except_first_base_class_methods_until_not_none(self, "allow_relation", obj1,
-                                                                       obj2, **hints)
+        return call_method_of_all_base_class_after_myself_until_not_none(
+            CakeConnectionRouter,
+            self,
+            "allow_relation",
+            obj1,
+            obj2,
+            **hints
+        )
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
-        return call_all_except_first_base_class_methods_until_not_none(self, "allow_migrate", db,
-                                                                       app_label, model_name, **hints)
+        return call_method_of_all_base_class_after_myself_until_not_none(
+            CakeConnectionRouter,
+            self,
+            "allow_migrate",
+            db,
+            app_label,
+            model_name,
+            **hints
+        )
