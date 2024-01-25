@@ -1,0 +1,49 @@
+FROM python:3.11-alpine3.18
+
+ARG ENVIRONMENT
+ENV ENVIRONMENT=$ENVIRONMENT
+
+ENV DJANGO_SETTINGS_MODULE="project_name.settings"
+
+RUN apk add --update --no-cache curl git libmagic
+# Do you need NumPy and/or pandas?
+#RUN apk add py3-numpy=1.25.2-r0 py3-pandas=2.0.3-r0 --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community
+
+ENV VIRTUAL_ENV=/usr
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+RUN mkdir -p /data/database
+RUN mkdir -p /data/media
+RUN mkdir -p /data/static
+
+COPY requirements*.txt /
+
+# NEXUS App Stack (contrib) Python and/or Django dependencies
+ENV PYTHONPATH="$PYTHONPATH:\
+/nexus-app-stack-contrib/cli/python-utilities:\
+/nexus-app-stack-contrib/api/django-common:\
+/nexus-app-stack-contrib/api/django-udf-model"
+
+ARG NEXUS_CONTRIB_REPOSITORY_BRANCH
+ARG NEXUS_CONTRIB_DOWNLOAD_SCRIPT
+
+# Unavoidable NEXUS App Stack (contrib) magic
+RUN --mount=type=secret,id=NEXUS_CONTRIB_REPOSITORY_TOKEN \
+  export ENVIRONMENT=$ENVIRONMENT TOKEN=$(cat /run/secrets/NEXUS_CONTRIB_REPOSITORY_TOKEN) BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
+  sh <(wget -q -O - --header="Authorization: Bearer $TOKEN" https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
+  $(echo ${PYTHONPATH//:\/nexus-app-stack-contrib\// })
+
+RUN pip install -r /requirements.txt
+
+COPY app/ /app/
+WORKDIR /app
+
+ARG GIT_BRANCH
+ARG GIT_VERSION
+ARG GIT_LASTCOMMITDATE
+ENV GIT_BRANCH=$GIT_BRANCH
+ENV GIT_VERSION=$GIT_VERSION
+ENV GIT_LASTCOMMITDATE=$GIT_LASTCOMMITDATE
+
+CMD ["/app/entrypoint.sh"]
