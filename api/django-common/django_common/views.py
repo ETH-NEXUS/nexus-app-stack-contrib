@@ -1,3 +1,4 @@
+import copy
 import json
 from os import environ
 
@@ -48,10 +49,12 @@ class BakeAllBaseFilterViewSets(mixins.ListModelMixin, viewsets.GenericViewSet):
                     swagger_auto_schema["manual_parameters"] = (swagger_auto_schema["manual_parameters"]
                                                                 + tmp["manual_parameters"])
 
-        def my_list(request, *_args, **_kwargs):
-            return super(BakeAllBaseFilterViewSets, self).list(request, *_args, **_kwargs)
+        self._original_list = self.list
 
-        self.list = my_list
+        def new_list(request, *_args, **_kwargs):
+            return self._original_list(request, *_args, **_kwargs)
+
+        self.list = new_list
         self.list._swagger_auto_schema = swagger_auto_schema
 
     def filter_queryset(self, queryset):
