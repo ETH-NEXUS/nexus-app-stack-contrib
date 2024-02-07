@@ -63,5 +63,6 @@ class Emailer:
             cc_emails=", ".join(cc_emails),
             subject=subject,
             html_message=html_message,
-            sent_at=datetime.now(pytz.timezone('Europe/Zurich')) if number_email_sent > 0 else None,
+            sent_at=datetime.now(pytz.timezone("Europe/Zurich")),
+            ok=number_email_sent > 0,
         )

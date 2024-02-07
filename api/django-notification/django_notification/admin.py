@@ -6,10 +6,10 @@ from .models import SentEmail
 
 @admin.register(SentEmail)
 class SentEmailAdmin(admin.ModelAdmin):
-    list_display = ("to_emails", "subject", "sent_at")
+    list_display = ("to_emails", "subject", "sent_at", "ok")
     search_fields = ("to_emails", "subject")
     ordering = ("-id",)
-    readonly_fields = ("from_email", "to_emails", "cc_emails", "subject", "get_html_message", "sent_at")
+    readonly_fields = ("from_email", "to_emails", "cc_emails", "subject", "get_html_message", "sent_at", "ok")
     exclude = ("html_message",)
 
     def get_html_message(self, obj):

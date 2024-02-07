@@ -8,6 +8,7 @@ class SentEmail(models.Model):
     subject = models.TextField()
     html_message = models.TextField()
     sent_at = models.DateTimeField(blank=True, null=True)
+    ok = models.BooleanField()
 
     class Meta:
         app_label_routing = True
