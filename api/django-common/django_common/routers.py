@@ -20,7 +20,7 @@ class AppLabelConnectionRouter:
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         if db == app_label:
             return True
-        return False
+        return None
 
 
 class DefaultConnectionRouter:
