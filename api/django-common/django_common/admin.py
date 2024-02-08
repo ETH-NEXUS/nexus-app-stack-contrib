@@ -16,6 +16,13 @@ def create_model_admin(model_admin, name, model, verbose_name=None, verbose_name
     return model_admin
 
 
+class OnlyInlinesAreEditableModelAdmin(admin.ModelAdmin):
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            self.readonly_fields = [f.name for f in obj.__class__._meta.fields if f.name != "id"]
+        return self.readonly_fields
+
+
 class EditableFieldsTabularInline(admin.TabularInline):
     editable_fields = ()
     exclude = ()
