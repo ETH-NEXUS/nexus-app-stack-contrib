@@ -9,14 +9,8 @@ DATE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 class FileUploadAdmin(admin.ModelAdmin):
-    list_display = (
-        "name",
-        "uploaded_by",
-        "uploaded_on",
-        "mime_type",
-        "hr_size",
-        "hash",
-    )
+    list_display = ("name", "uploaded_by", "uploaded_on", "detected_mime_type", "hr_size", "checksum")
+    readonly_fields = ("file_upload_batch", "position", "file", "detected_mime_type", "checksum")
 
     def hr_size(self, file_upload: FileUpload):
         return hr_size(file_upload.size)
@@ -33,10 +27,14 @@ class FileUploadAdmin(admin.ModelAdmin):
 
     uploaded_by.short_description = "Uploaded by"
 
+    def has_module_permission(self, request):
+        return False
+
 
 class FileUploadAdminInline(admin.TabularInline):
     model = FileUpload
     readonly_fields = ("detected_mime_type", "checksum")
+    show_change_link = True
 
     def has_add_permission(self, request, obj):
         return False
