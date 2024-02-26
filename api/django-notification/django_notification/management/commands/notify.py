@@ -1,6 +1,7 @@
 import traceback
 
 from django.core.management import BaseCommand, call_command
+from django.db import connections
 
 from django_notification import Emailer
 
@@ -18,11 +19,10 @@ class Command(BaseCommand):
         parser.add_argument("--%s" % TO_EMAIL_ADDRESSES, nargs="*", required=True, type=str)
         parser.add_argument("--%s" % CC_EMAIL_ADDRESSES, nargs="*", required=False, type=str, default=[])
 
-    def handle(self, *args, **options):
+    def call(self, options, database_connection=None):
         try:
-            call_command(
-                options[COMMAND_NAME]
-            )
+            call_command(options[COMMAND_NAME], database_connection=database_connection)
+            return True
         except BaseException as e:
             Emailer.send_using_template(
                 None,
@@ -36,4 +36,8 @@ class Command(BaseCommand):
                 options[CC_EMAIL_ADDRESSES],
                 options[TO_EMAIL_ADDRESSES],
             )
-            raise e
+            traceback.print_exc()
+            return False
+
+    def handle(self, *args, **options):
+        self.call(options)
