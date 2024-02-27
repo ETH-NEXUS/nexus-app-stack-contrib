@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template import Context
 from django.template.loader import get_template
-from django.template.loader_tags import BlockNode
+from django.template.loader_tags import BlockNode, ExtendsNode
 from django.utils.html import strip_tags
 
 logger = logging.getLogger(__name__)
@@ -22,8 +22,15 @@ class Emailer:
         for node in node_list:
             if got_it(node):
                 return node
-            elif hasattr(node, "nodelist"):
-                return self._depth_first_search(node.nodelist, got_it)
+            if hasattr(node, "nodelist"):
+                result = self._depth_first_search(node.nodelist, got_it)
+                if result is not None:
+                    return result
+            if isinstance(node, ExtendsNode):
+                template = get_template(node.parent_name.token[1:-1])
+                result = self._depth_first_search(template.template.nodelist, got_it)
+                if result is not None:
+                    return result
 
     def send_using_template(self, subject_text, template_name, context, images, cc_emails, to_emails):
         template = get_template(template_name)

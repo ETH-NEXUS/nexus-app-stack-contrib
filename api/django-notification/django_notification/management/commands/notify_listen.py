@@ -5,6 +5,9 @@ from django_notification.management.commands.notify import COMMAND_NAME, Command
 
 class Command(NotifyCommand):
 
+    def get__file__(self):
+        return __file__
+
     def handle(self, *args, **options):
         connection = connections["import"].cursor().connection
         connection.execute(f"LISTEN command__{options[COMMAND_NAME]}")
