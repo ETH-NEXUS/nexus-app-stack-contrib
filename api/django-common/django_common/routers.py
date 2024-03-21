@@ -1,4 +1,12 @@
-from django_common.utilities import call_method_of_all_base_class_after_myself_until_not_none
+from rest_framework.routers import DefaultRouter
+
+from django_common.utilities import (call_method_of_all_base_class_after_myself_until_not_none,
+                                     camel_case_class_to_snake_case_string)
+
+
+class ViewSetClassNameBasedRouter(DefaultRouter):
+    def get_default_basename(self, viewset):
+        return camel_case_class_to_snake_case_string(viewset)
 
 
 class AppLabelConnectionRouter:
