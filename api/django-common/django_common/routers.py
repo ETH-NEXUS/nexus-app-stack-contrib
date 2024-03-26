@@ -4,9 +4,25 @@ from django_common.utilities import (call_method_of_all_base_class_after_myself_
                                      camel_case_class_to_snake_case_string)
 
 
-class ViewSetClassNameBasedRouter(DefaultRouter):
+class ViewSetClassNameBasedNameRouter(DefaultRouter):
     def get_default_basename(self, viewset):
-        return camel_case_class_to_snake_case_string(viewset)
+        tmp = camel_case_class_to_snake_case_string(viewset)
+        if tmp.endswith("_view_set"):
+            return tmp[:-len("_view_set")]
+        raise ValueError
+
+
+class ViewSetClassNameRouter(ViewSetClassNameBasedNameRouter):
+    def __init__(self, schema, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.schema = schema
+
+    def registerViewSet(self, viewset):
+        basename = self.get_default_basename(viewset)
+        if basename.startswith(self.schema):
+            prefix = basename.replace(self.schema + "_", "", 1)
+            return self.register(prefix, viewset, basename)
+        raise ValueError
 
 
 class AppLabelConnectionRouter:

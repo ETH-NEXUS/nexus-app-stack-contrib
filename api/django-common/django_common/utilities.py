@@ -1,10 +1,24 @@
 import re
 
-_camel_to_snake_case_pattern = re.compile(r"(?<!^)(?=[A-Z])")
+_camel_to_snake_case_pattern = re.compile(r"([A-Z])")
+_snake_case_to_camel_pattern = re.compile(r"(^([a-z])|_([a-z]))")
 
 
 def camel_case_string_to_snake_case_string(s):
-    return _camel_to_snake_case_pattern.sub("_", s).lower()
+    first_letter = True
+
+    def add_underscore(letter):
+        nonlocal first_letter
+        if first_letter:
+            first_letter = False
+            return letter
+        return "_" + letter
+
+    return _camel_to_snake_case_pattern.sub(lambda x: add_underscore(x.group(1).lower()), s)
+
+
+def snake_case_string_to_camel_case_string(s):
+    return _snake_case_to_camel_pattern.sub(lambda x: x.group(1).upper(), s)
 
 
 def camel_case_class_to_snake_case_string(o):
