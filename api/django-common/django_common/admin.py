@@ -5,6 +5,8 @@ def create_model_admin(model_admin, name, model, verbose_name=None, verbose_name
     class Meta:
         proxy = True
         app_label = model_admin.__module__[:model_admin.__module__.index(".")]
+        # TODO Check whether this is a wise solution.
+        auto_created = True
 
     if verbose_name is not None:
         Meta.verbose_name = verbose_name
