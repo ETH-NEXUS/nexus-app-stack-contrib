@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='fileupload',
             name='file',
-            field=models.FileField(storage=django_fileupload.models.FileUploadFileStorage(), upload_to=django_fileupload.models.file_path),
+            field=models.FileField(storage=django_fileupload.models.FileUploadFileStorage(), upload_to=django_fileupload.models._generate_complete_file_path),
         ),
     ]

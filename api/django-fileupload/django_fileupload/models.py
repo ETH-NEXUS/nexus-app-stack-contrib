@@ -7,7 +7,7 @@ from django.db import models
 from django.utils import timezone
 
 from django_common.models import OwnedModel
-from python_utilities.crypto import generate_checksum
+from python_utilities.crypto import generate_checksum_from_file
 
 
 class FileUploadBatch(OwnedModel):
@@ -28,9 +28,13 @@ class FileUploadFileStorage(FileSystemStorage):
         raise FileExistsError
 
 
-def file_path(instance, filename):
-    """Defines the filepath to store the uploaded file to"""
-    return join(instance.__class__.__name__, str(instance.id), filename)
+def generate_file_path(instance):
+    """Defines the file path to store the uploaded file to"""
+    return instance.__class__.__name__
+
+
+def _generate_complete_file_path(instance, filename):
+    return join(generate_file_path(instance), str(instance.id), filename)
 
 
 class FileUpload(models.Model):
@@ -43,7 +47,7 @@ class FileUpload(models.Model):
         FileUploadBatch, related_name="file_uploads", on_delete=models.CASCADE, null=False, blank=False
     )
     position = models.PositiveSmallIntegerField()
-    file = models.FileField(upload_to=file_path, storage=FileUploadFileStorage())
+    file = models.FileField(upload_to=_generate_complete_file_path, storage=FileUploadFileStorage())
     detected_mime_type = models.CharField(max_length=100, editable=False)
     checksum = models.CharField(max_length=64, editable=False)
 
@@ -72,7 +76,7 @@ class FileUpload(models.Model):
             super().save(update_fields=("file",))
         else:
             super().save(*args, **kwargs)
-        self.checksum = generate_checksum(self.file.path)
+        self.checksum = generate_checksum_from_file(self.file.path)
         self.detected_mime_type = magic.from_file(self.path, mime=True)
         super().save(update_fields=("detected_mime_type", "checksum"))
 

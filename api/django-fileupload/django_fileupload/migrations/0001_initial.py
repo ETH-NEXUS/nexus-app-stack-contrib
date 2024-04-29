@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             name='FileUpload',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('file', models.FileField(upload_to=django_fileupload.models.file_path)),
+                ('file', models.FileField(upload_to=django_fileupload.models._generate_complete_file_path)),
                 ('mime_type', models.CharField(max_length=100)),
                 ('name', models.CharField(max_length=255)),
                 ('size', models.IntegerField(default=0)),
