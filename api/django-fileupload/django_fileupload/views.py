@@ -47,31 +47,28 @@ class FileUploadBatchViewSet(
 
     def create(self, request, *args, **kwargs):
         if request.FILES:
-            file_position = 0
-            for file in request.FILES.getlist("files"):
-                file_name_parts = os.path.splitext(file.name)
-                if self.verify_file_extension(request, file_position, file_name_parts):
-                    if self.verify_file_checksum(request, file_position, file_name_parts,
-                                                 generate_checksum_from_chunks(file.chunks())):
-                        file_position += 1
-                        continue
-                    raise ValidationError(_("Incorrect or no checksums in the request."))
-                raise ValidationError(_("Files with incorrect extension in the request."))
-            if self.verify_file_count(request, file_position):
-                file_position = 0
+            files = request.FILES.getlist("files")
+            if self.verify_file_count(request, len(files)):
+                for file_position, file in enumerate(files):
+                    file_name_parts = os.path.splitext(file.name)
+                    if self.verify_file_extension(request, file_position, file_name_parts):
+                        if self.verify_file_checksum(request, file_position, file_name_parts,
+                                                     generate_checksum_from_chunks(file.chunks())):
+                            continue
+                        raise ValidationError(_("Incorrect or no checksums in the request."))
+                    raise ValidationError(_("Files with incorrect extension in the request."))
                 response = []
                 with exclusive_insert_table_lock(FileUploadBatch):
                     file_upload_batch = FileUploadBatch.objects.create(owner=request.user)
                     # Metadata needs to be added here as FileUpload.objects.create(...) may depend on it.
                     self.add_metadata(request, file_upload_batch)
-                    for file in request.FILES.getlist("files"):
+                    for file_position, file in enumerate(files):
                         file_upload = FileUpload.objects.create(
                             file_upload_batch=file_upload_batch,
                             position=file_position,
                             file=file,
                         )
                         response.append({'id': file_upload.id, 'name': file_upload.name})
-                        file_position += 1
 
                     return Response(response, status=status.HTTP_201_CREATED)
             raise ValidationError(_("Incorrect number of files in the request."))

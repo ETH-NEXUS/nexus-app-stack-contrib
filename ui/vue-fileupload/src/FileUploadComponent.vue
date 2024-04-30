@@ -20,6 +20,10 @@ const props = defineProps({
     type: Number,
     default: () => 10,
   },
+  maxSelectableFiles: {
+    type: Number,
+    default: () => 10,
+  },
   acceptedMimeTypes: {
     type: Array<string>,
     default: () => [
@@ -138,7 +142,7 @@ const newRules = props.rules.map(f => () => f(files.value))
     v-model="uploadFiles"
     multiple
     counter
-    :max-files="maxFiles"
+    :max-files="maxFiles < maxSelectableFiles ? maxFiles : maxSelectableFiles"
     :max-file-size="maxFileSize"
     :accept="acceptedMimeTypes.join(', ')"
     :label="uploadFiles === undefined ? t('label.click_to_add_files') : undefined"
