@@ -1,4 +1,4 @@
-FROM python:3.11-alpine3.18
+FROM python:3.11-alpine3.19
 
 ARG ENVIRONMENT
 ENV ENVIRONMENT=$ENVIRONMENT
@@ -7,7 +7,7 @@ ENV DJANGO_SETTINGS_MODULE="project_name.settings"
 
 RUN apk add --update --no-cache curl git libmagic
 # Do you need NumPy and/or pandas?
-#RUN apk add py3-numpy=1.25.2-r0 py3-pandas=2.0.3-r0 --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community
+#RUN apk add py3-numpy=1.25.2-r0 py3-pandas=2.0.3-r0 --repository=https://dl-cdn.alpinelinux.org/alpine/v3.19/community
 
 ENV VIRTUAL_ENV=/usr
 RUN python3 -m venv $VIRTUAL_ENV
