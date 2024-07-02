@@ -18,12 +18,12 @@ class FileUploadAdmin(admin.ModelAdmin):
     hr_size.short_description = "Size"
 
     def uploaded_on(self, file_upload: FileUpload):
-        return dt.strftime(file_upload.batch.uploaded_on, DATE_TIME_FORMAT)
+        return dt.strftime(file_upload.file_upload_batch.uploaded_on, DATE_TIME_FORMAT)
 
     uploaded_on.short_description = "Uploaded on"
 
     def uploaded_by(self, file_upload: FileUpload):
-        return file_upload.batch.owner
+        return file_upload.file_upload_batch.owner
 
     uploaded_by.short_description = "Uploaded by"
 
