@@ -50,6 +50,7 @@ class FileUpload(models.Model):
     file = models.FileField(upload_to=_generate_complete_file_path, storage=FileUploadFileStorage())
     detected_mime_type = models.CharField(max_length=100, editable=False)
     checksum = models.CharField(max_length=64, editable=False)
+    deleted_on = models.DateTimeField(null=True, editable=False)
 
     def __str__(self):
         return self.file.path

@@ -9,6 +9,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from django.utils import timezone
 
 from django_common.postgresql import exclusive_insert_table_lock
 from django_common.renderers import PassthroughRenderer
@@ -100,4 +101,15 @@ class FileUploadViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
+    keep_after_deletion = False
+
+    def destroy(self, request, *args, **kwargs):
+        file_upload = self.get_object()
+        if self.keep_after_deletion:
+            file_upload.deleted_on = timezone.now()
+            file_upload.save()
+        else:
+            file_upload.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
     pass
