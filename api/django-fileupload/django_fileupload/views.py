@@ -28,6 +28,8 @@ class FileUploadBatchViewSet(
     serializer_class = FileUploadBatchSerializer
     parser_classes = (MultiPartParser,)
     has_owner = True
+    # Maximum file size in bytes. For example 5 * 1024 * 1024 is 5 MB.
+    max_file_size = None
 
     # Workaround for "drf-yasg" (see https://github.com/axnsan12/drf-yasg/issues/503).
     def get_serializer_class(self):
@@ -52,6 +54,10 @@ class FileUploadBatchViewSet(
             files = request.FILES.getlist("files")
             if self.verify_file_count(request, len(files)):
                 for file_position, file in enumerate(files):
+
+                    if self.max_file_size and file.size > self.max_file_size:
+                        raise ValidationError(_(f"File size exceeds the maximum allowed size of {self.max_file_size / (1024 ** 2)} MB."))
+
                     file_name_parts = os.path.splitext(file.name)
                     if self.verify_file_extension(request, file_position, file_name_parts):
                         if self.verify_file_checksum(request, file_position, file_name_parts,
