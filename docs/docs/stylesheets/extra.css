@@ -1,0 +1,16 @@
+
+:root {
+    --md-primary-fg-color:        #2563eb;
+    --md-primary-fg-color--light: #2563eb;
+    --md-primary-fg-color--dark:  #2563eb;
+    --md-accent-fg-color:         #2563eb;
+    --md-accent-fg-color--light:  #2563eb;
+}
+
+.md-nav__title {
+    display: none;
+}
+
+.mermaid {
+    text-align: center;
+ }

@@ -1,0 +1,1 @@
+Should present list of django apps available in app stack contrib together with their features
