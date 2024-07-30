@@ -42,7 +42,7 @@ services:
   RUN apk add --update --no-cache git
   ```
 
-* The Dockerfile commands like `COPY requirements.txt /` or `COPY app/package.json /app` has to be executed before the
+* The Dockerfile commands like `COPY requirements.txt /` or `COPY app/package.json /app` should be executed before the
   Dockerfile commands relevant for the NEXUS app stack because it is convenient that a dependency version update
   triggers a refresh of the NEXUS app stack repository.
 
