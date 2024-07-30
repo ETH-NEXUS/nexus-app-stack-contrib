@@ -4,28 +4,11 @@
 
 In order to be able to work with the NEXUS app stack code, the following requirements must be met.
 
-### Repository access token
-
-How to create a GitHub fine gained personal access token:
-
-Go to https://github.com/settings/profile  
-→ Developer settings  
-→ Personal access tokens  
-→ Fine-grained tokens  
-→ Generate new token  
-→ Choose as "Resource owner" "ETH-NEXUS"  
-→ Select your project repository under "Only select repositories"  
-→ Under "Repository permissions" change only "Contents" to "Read-only"
-
-An owner of the ETH-NEXUS organization must approve your token request. Under https://github.com/orgs/ETH-NEXUS/people
-you see who an owner is.
-
 ### Environment variables
 
 Add the following environment variables to your <tt>.env</tt> file:
 
 ```
-NEXUS_CONTRIB_REPOSITORY_TOKEN=
 NEXUS_CONTRIB_REPOSITORY_BRANCH=github.com/ETH-NEXUS/nexus-app-stack-contrib.git@main
 NEXUS_CONTRIB_DOWNLOAD_SCRIPT=raw.githubusercontent.com/ETH-NEXUS/nexus-app-stack-contrib/main/download.sh
 ```
@@ -37,10 +20,6 @@ Integrate the following lines in your Docker Compose file version 3.9:
 ```
 version: "3.9"
 
-secrets:
-  NEXUS_CONTRIB_REPOSITORY_TOKEN:
-    environment: NEXUS_CONTRIB_REPOSITORY_TOKEN
-
 services:
   service1:
     build:
@@ -48,8 +27,6 @@ services:
         ENVIRONMENT: "Production" # Only needs to be defined in your Docker Compose production file.
         NEXUS_CONTRIB_REPOSITORY_BRANCH: "$NEXUS_CONTRIB_REPOSITORY_BRANCH"
         NEXUS_CONTRIB_DOWNLOAD_SCRIPT: "$NEXUS_CONTRIB_DOWNLOAD_SCRIPT"
-      secrets:
-        - NEXUS_CONTRIB_REPOSITORY_TOKEN
     volumes:
       - ${NEXUS_CONTRIB_BIND:-/dev/null:/.no_nexus_contrib_bind}
 ```
@@ -91,9 +68,8 @@ NEXUS App Stack <tt>api</tt> bootstrap command for the...
 * Alpine Linux BusyBox Almquist shell:
 
   ```
-  RUN --mount=type=secret,id=NEXUS_CONTRIB_REPOSITORY_TOKEN \
-    export ENVIRONMENT=$ENVIRONMENT TOKEN=$(cat /run/secrets/NEXUS_CONTRIB_REPOSITORY_TOKEN) BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
-    sh <(wget -q -O - --header="Authorization: Bearer $TOKEN" https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
+  RUN export ENVIRONMENT=$ENVIRONMENT BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
+    sh <(wget -q -O - https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
     $(echo "$PYTHONPATH" | sed "s/:\/nexus-app-stack-contrib\// /g")
   ```
 
@@ -102,9 +78,8 @@ NEXUS App Stack <tt>api</tt> bootstrap command for the...
 * Bash shell:
 
   ```
-  RUN --mount=type=secret,id=NEXUS_CONTRIB_REPOSITORY_TOKEN \
-    export ENVIRONMENT=$ENVIRONMENT TOKEN=$(cat /run/secrets/NEXUS_CONTRIB_REPOSITORY_TOKEN) BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
-    bash -c "$(wget -q -O - --header="Authorization: Bearer $TOKEN" https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT)" '' \
+  RUN export ENVIRONMENT=$ENVIRONMENT BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
+    bash -c "$(wget -q -O - https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT)" '' \
     $(echo "$PYTHONPATH" | sed "s/:\/nexus-app-stack-contrib\// /g")
   ```
 
@@ -113,9 +88,8 @@ NEXUS App Stack <tt>api</tt> bootstrap command for the...
 All NEXUS app stack UI packages that you want to use in the project are specified in the last line of the `RUN` command.
 
 ```
-RUN --mount=type=secret,id=NEXUS_CONTRIB_REPOSITORY_TOKEN \
-  export ENVIRONMENT=$ENVIRONMENT TOKEN=$(cat /run/secrets/NEXUS_CONTRIB_REPOSITORY_TOKEN) BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
-  sh <(wget -q -O - --header="Authorization: Bearer $TOKEN" https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
+RUN export ENVIRONMENT=$ENVIRONMENT BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
+  sh <(wget -q -O - https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
   ui/vue-fileupload ui/vue-viewer
 ```
 
@@ -137,7 +111,7 @@ If you do not need to edit the code locally, you can reference it directly (in t
 NEXUS app stack specific Dockerfile adjustments):
 
 ```
-django-feature @ git+https://${NEXUS_CONTRIB_REPOSITORY_TOKEN}@${NEXUS_CONTRIB_REPOSITORY_BRANCH}#subdirectory=api/django-feature
+django-feature @ git+https://${NEXUS_CONTRIB_REPOSITORY_BRANCH}#subdirectory=api/django-feature
 ```
 
 ### JavaScript
@@ -176,7 +150,7 @@ yarn dev --host 0.0.0.0 --port 8077
 Clone the "nexus-app-stack-contrib" repository to a local directory next to your project repository directory:
 
 ```
-git clone https://${NEXUS_CONTRIB_REPOSITORY_TOKEN}@github.com/ETH-NEXUS/nexus-app-stack-contrib.git -b main
+git clone https://github.com/ETH-NEXUS/nexus-app-stack-contrib.git -b main
 ```
 
 The repository directory will be bind into your Docker containers. This approach allows you to develop the app stack
@@ -192,7 +166,6 @@ NEXUS_CONTRIB_BIND=../nexus-app-stack-contrib:/nexus-app-stack-contrib
 ### <tt>download.sh</tt>
 
 ```
-TOKEN= \
-  BRANCH=github.com/ETH-NEXUS/nexus-app-stack-contrib.git@main \
+BRANCH=github.com/ETH-NEXUS/nexus-app-stack-contrib.git@main \
   sh download.sh api/django-feature
 ```
