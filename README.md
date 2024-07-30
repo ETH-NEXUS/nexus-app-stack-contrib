@@ -79,7 +79,7 @@ NEXUS App Stack <tt>api</tt> bootstrap command for the...
 
   ```
   RUN export ENVIRONMENT=$ENVIRONMENT BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
-    bash -c "$(wget -q -O - https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT)" '' \
+    bash -c "$(wget -q -O - https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false)" '' \
     $(echo "$PYTHONPATH" | sed "s/:\/nexus-app-stack-contrib\// /g")
   ```
 
