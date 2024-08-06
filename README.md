@@ -32,7 +32,7 @@ NEXUS_CONTRIB_DOWNLOAD_SCRIPT=raw.githubusercontent.com/ETH-NEXUS/nexus-app-stac
 
 ### Docker Compose
 
-Integrate the following lines in your common Docker Compose files version 3.9:
+Integrate the following lines in your Docker Compose file version 3.9:
 
 ```
 version: "3.9"
@@ -45,7 +45,7 @@ services:
   service1:
     build:
       args:
-        ENVIRONMENT: "Production"
+        ENVIRONMENT: "Production" # Only needs to be defined in your Docker Compose production file.
         NEXUS_CONTRIB_REPOSITORY_BRANCH: "$NEXUS_CONTRIB_REPOSITORY_BRANCH"
         NEXUS_CONTRIB_DOWNLOAD_SCRIPT: "$NEXUS_CONTRIB_DOWNLOAD_SCRIPT"
       secrets:
@@ -56,40 +56,61 @@ services:
 
 ### Dockerfiles
 
-The <tt>git</tt> command must be available during the Docker image build:
+#### Basics
 
-```
-RUN apk add --update --no-cache git
-```
+* The <tt>git</tt> command must be available during the Docker image build. On Alpine Linux you can install Git with the
+  following command:
 
-**Note:** The Dockerfile commands like `COPY requirements.txt /` or `COPY app/package.json /app` has to be executed
-before the commands relevant for the NEXUS app stack because it is useful that a dependency version update triggers an
-update of the NEXUS app stack repository.
+  ```
+  RUN apk add --update --no-cache git
+  ```
+
+* The Dockerfile commands like `COPY requirements.txt /` or `COPY app/package.json /app` has to be executed before the
+  Dockerfile commands relevant for the NEXUS app stack because it is convenient that a dependency version update
+  triggers a refresh of the NEXUS app stack repository.
 
 #### Python/Django (<tt>api</tt> subdirectory)
 
-All NEXUS app stack libraries and/or apps that you want to use in the project are specified with the `PYTHONPATH`
-environment variable.
+All NEXUS app stack Python libraries and/or Django apps that you want to use in your project must be added to the
+`PYTHONPATH` environment variable so that Python is aware of the sources. This variable is also used during the NEXUS
+app stack bootstrap to download/clone the sources from the repository (see next step).
+
+Define the environment:
 
 ```
 ARG ENVIRONMENT
 ARG NEXUS_CONTRIB_REPOSITORY_BRANCH
 ARG NEXUS_CONTRIB_DOWNLOAD_SCRIPT
 ENV PYTHONPATH="$PYTHONPATH:\
-/nexus-app-stack-contrib/api/django-feature"
-RUN --mount=type=secret,id=NEXUS_CONTRIB_REPOSITORY_TOKEN \
-  export ENVIRONMENT=$ENVIRONMENT TOKEN=$(cat /run/secrets/NEXUS_CONTRIB_REPOSITORY_TOKEN) BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
-  sh <(wget -q -O - --header="Authorization: Bearer $TOKEN" https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
-  $(echo ${PYTHONPATH//:\/nexus-app-stack-contrib\// })
+/nexus-app-stack-contrib/api/django-feature-1:\
+/nexus-app-stack-contrib/api/django-feature-2"
 ```
 
-**Note:** The command was tested with an Alpine Linux BusyBox Almquist shell.
+NEXUS App Stack <tt>api</tt> bootstrap command for the...
 
-See also the [Dockerfile.TINY_IMAGE](api/TEMPLATES/Dockerfile.TINY_IMAGE) template.
+* Alpine Linux BusyBox Almquist shell:
+
+  ```
+  RUN --mount=type=secret,id=NEXUS_CONTRIB_REPOSITORY_TOKEN \
+    export ENVIRONMENT=$ENVIRONMENT TOKEN=$(cat /run/secrets/NEXUS_CONTRIB_REPOSITORY_TOKEN) BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
+    sh <(wget -q -O - --header="Authorization: Bearer $TOKEN" https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
+    $(echo "$PYTHONPATH" | sed "s/:\/nexus-app-stack-contrib\// /g")
+  ```
+
+  See also the [Dockerfile.TINY_IMAGE](api/TEMPLATES/Dockerfile.TINY_IMAGE) template.
+
+* Bash shell:
+
+  ```
+  RUN --mount=type=secret,id=NEXUS_CONTRIB_REPOSITORY_TOKEN \
+    export ENVIRONMENT=$ENVIRONMENT TOKEN=$(cat /run/secrets/NEXUS_CONTRIB_REPOSITORY_TOKEN) BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
+    bash -c "$(wget -q -O - --header="Authorization: Bearer $TOKEN" https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT)" '' \
+    $(echo "$PYTHONPATH" | sed "s/:\/nexus-app-stack-contrib\// /g")
+  ```
 
 #### Vue/Quasar (<tt>ui</tt> subdirectory)
 
-All NEXUS app stack packages that you want to use in the project are specified in the last line of the `RUN` command.
+All NEXUS app stack UI packages that you want to use in the project are specified in the last line of the `RUN` command.
 
 ```
 RUN --mount=type=secret,id=NEXUS_CONTRIB_REPOSITORY_TOKEN \
