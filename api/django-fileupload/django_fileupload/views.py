@@ -27,8 +27,6 @@ class FileUploadBatchViewSet(
     queryset = FileUploadBatch.objects.all()
     serializer_class = FileUploadBatchSerializer
     parser_classes = (MultiPartParser,)
-    has_owner = True
-    # Maximum file size in bytes. For example 5 * 1024 * 1024 is 5 MB.
 
     def get_max_file_size(self, request):
         return None
@@ -69,10 +67,7 @@ class FileUploadBatchViewSet(
                     raise ValidationError(_("Files with incorrect extension in the request."))
                 response = []
                 with exclusive_insert_table_lock(FileUploadBatch):
-                    if self.has_owner:
-                        file_upload_batch = FileUploadBatch.objects.create(owner=request.user)
-                    else:
-                        file_upload_batch = FileUploadBatch.objects.create()
+                    file_upload_batch = FileUploadBatch.objects.create(owner=request.user)
                     # Metadata needs to be added here as FileUpload.objects.create(...) may depend on it.
                     self.add_metadata(request, file_upload_batch)
                     for file_position, file in enumerate(files):
