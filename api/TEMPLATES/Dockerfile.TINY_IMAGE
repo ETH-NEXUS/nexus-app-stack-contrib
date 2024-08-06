@@ -29,9 +29,8 @@ ARG NEXUS_CONTRIB_REPOSITORY_BRANCH
 ARG NEXUS_CONTRIB_DOWNLOAD_SCRIPT
 
 # Unavoidable NEXUS App Stack (contrib) magic
-RUN --mount=type=secret,id=NEXUS_CONTRIB_REPOSITORY_TOKEN \
-  export ENVIRONMENT=$ENVIRONMENT TOKEN=$(cat /run/secrets/NEXUS_CONTRIB_REPOSITORY_TOKEN) BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
-  sh <(wget -q -O - --header="Authorization: Bearer $TOKEN" https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
+RUN export ENVIRONMENT=$ENVIRONMENT BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
+  sh <(wget -q -O - https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
   $(echo ${PYTHONPATH//:\/nexus-app-stack-contrib\// })
 
 RUN pip install -r /requirements.txt
