@@ -3,8 +3,6 @@ from types import MappingProxyType
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import AnonymousUser
-from django.core.exceptions import ValidationError
 
 
 def model_with_custom_manager(model_class, manager_instance):
@@ -29,15 +27,6 @@ class OwnedModel(models.Model):
 
     class Meta:
         abstract = True
-
-    def clean(self):
-        User = get_user_model()
-        if not isinstance(self.owner, (User, AnonymousUser)):
-            raise ValidationError("Owner must be a user or an anonymous user.")
-
-    def save(self, *args, **kwargs):
-        self.full_clean()  # This will call the clean method
-        super().save(*args, **kwargs)
 
 
 class Encoding(models.TextChoices):
