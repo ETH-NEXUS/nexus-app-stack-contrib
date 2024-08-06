@@ -22,6 +22,7 @@ class OwnedModel(models.Model):
     A model that has a relationship to the owner in the user model.
     """
 
+    # Null is allowed for the case that the owner is anonymous.
     owner = models.ForeignKey(get_user_model(), on_delete=models.RESTRICT, null=True, blank=True)
 
     class Meta:

@@ -29,7 +29,9 @@ class FileUploadBatchViewSet(
     parser_classes = (MultiPartParser,)
     has_owner = True
     # Maximum file size in bytes. For example 5 * 1024 * 1024 is 5 MB.
-    max_file_size = None
+
+    def get_max_file_size(self, request):
+        return None
 
     # Workaround for "drf-yasg" (see https://github.com/axnsan12/drf-yasg/issues/503).
     def get_serializer_class(self):
@@ -55,8 +57,8 @@ class FileUploadBatchViewSet(
             if self.verify_file_count(request, len(files)):
                 for file_position, file in enumerate(files):
 
-                    if self.max_file_size and file.size > self.max_file_size:
-                        raise ValidationError(_(f"File size exceeds the maximum allowed size of {self.max_file_size / (1024 ** 2)} MB."))
+                    if self.get_max_file_size(request) and file.size > self.get_max_file_size(request):
+                        raise ValidationError(_(f"File size exceeds the maximum allowed size of {self.get_max_file_size(request) / (1024 ** 2)} MB."))
 
                     file_name_parts = os.path.splitext(file.name)
                     if self.verify_file_extension(request, file_position, file_name_parts):
@@ -107,11 +109,12 @@ class FileUploadViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    keep_after_deletion = False
+    def keep_after_deletion(self):
+        return False
 
     def destroy(self, request, *args, **kwargs):
         file_upload = self.get_object()
-        if self.keep_after_deletion:
+        if self.keep_after_deletion():
             file_upload.deleted_on = timezone.now()
             file_upload.save()
         else:
