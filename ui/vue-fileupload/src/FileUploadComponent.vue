@@ -50,8 +50,8 @@ const props = defineProps({
     required: true,
   },
   rules: {
-    type: Object as PropType<((value: ValidationRule) => boolean)[]>,
-    default: () => {
+    type: Array as PropType<((value: ValidationRule) => boolean)[]>,
+    default() {
       return []
     },
   },
