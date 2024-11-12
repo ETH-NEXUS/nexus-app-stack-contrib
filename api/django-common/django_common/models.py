@@ -1,7 +1,9 @@
+import functools
 from types import MappingProxyType
 
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.utils.functional import classproperty
 from django.utils.translation import gettext_lazy as _
 
 
@@ -28,16 +30,38 @@ class OwnedModel(models.Model):
         abstract = True
 
 
-class Encoding(models.TextChoices):
+class EnhancedTextChoices(models.TextChoices):
+
+    @classproperty
+    def max_value_length(cls):
+        return max(len(value) for value in cls.values)
+
+    @classmethod
+    @functools.lru_cache(maxsize=1)
+    def get_value_to_choice_mapping(cls):
+        return MappingProxyType(dict(cls.choices))
+
+    @classmethod
+    def map_value_to_choice(cls, value):
+        return cls.get_value_to_choice_mapping()[value]
+
+    @classmethod
+    @functools.lru_cache(maxsize=1)
+    def get_choice_to_value_mapping(cls):
+        return MappingProxyType(dict(cls.values))
+
+    @classmethod
+    def map_choice_to_value(cls, choice):
+        return cls.get_choice_to_value_mapping()[choice]
+
+
+class Encoding(EnhancedTextChoices):
     ASCII = "ascii", _("ASCII")
     UTF8 = "utf8", _("UTF-8")
     BINARY = "binary", _("Binary")
 
 
-encoding__value_to_choice_mapping = MappingProxyType(dict(Encoding.choices))
-
-
-class MimeType(models.TextChoices):
+class MimeType(EnhancedTextChoices):
     PLAIN = "plain", "text/plain"
     CSV = "csv", "text/csv"
     TSV = "tsv", "text/tab-separated-values"
@@ -45,25 +69,19 @@ class MimeType(models.TextChoices):
     XLS = "xls", "application/vnd.ms-excel"
     FASTA = "fasta", "text/x-fasta"
     # TODO Correct?
-    CHAIN = "chain", "text/chain"
+    CHAIN = "chain", "text/plain"
     # TODO Correct?
-    MD5 = "md5", "text/md5",
+    MD5 = "md5", "text/plain",
     # TODO Correct?
-    SHA256 = "sha256", "text/sha256"
+    SHA256 = "sha256", "text/plain"
 
 
-mime_type__value_to_choice_mapping = MappingProxyType(dict(MimeType.choices))
-
-
-class Checksum(models.TextChoices):
+class Checksum(EnhancedTextChoices):
     MD5 = "md5", _("MD5")
     SHA256 = "sha256", _("SHA-256")
 
 
-checksum__value_to_choice_mapping = MappingProxyType(dict(Checksum.choices))
-
-
-class WellX(models.TextChoices):
+class WellX(EnhancedTextChoices):
     A = "A", _("A")
     B = "B", _("B")
     C = "C", _("C")
@@ -74,7 +92,7 @@ class WellX(models.TextChoices):
     H = "H", _("H")
 
 
-class Canton(models.TextChoices):
+class Canton(EnhancedTextChoices):
     AG = "AG", _("Aargau")
     AI = "AI", _("Appenzell Innerrhoden")
     AR = "AR", _("Appenzell Ausserrhoden")

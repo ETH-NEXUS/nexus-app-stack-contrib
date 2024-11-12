@@ -2,6 +2,9 @@ from django.contrib import admin
 
 
 def create_model_admin(model_admin, name, model, verbose_name=None, verbose_name_plural=None):
+    """
+    Creates several admin models from one model class.
+    """
     class Meta:
         proxy = True
         app_label = model_admin.__module__[:model_admin.__module__.index(".")]
@@ -19,6 +22,9 @@ def create_model_admin(model_admin, name, model, verbose_name=None, verbose_name
 
 
 class OnlyInlinesAreEditableModelAdmin(admin.ModelAdmin):
+    """
+    An admin model that is read-only with the exception of inlines.
+    """
     def get_readonly_fields(self, request, obj=None):
         if obj:
             self.readonly_fields = [f.name for f in obj.__class__._meta.fields if f.name != "id"]
@@ -26,6 +32,9 @@ class OnlyInlinesAreEditableModelAdmin(admin.ModelAdmin):
 
 
 class EditableFieldsTabularInline(admin.TabularInline):
+    """
+    An admin inline model that is read-only by default.
+    """
     editable_fields = ()
     exclude = ()
 

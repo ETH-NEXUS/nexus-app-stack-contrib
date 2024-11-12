@@ -1,4 +1,3 @@
-import copy
 import json
 from os import environ
 
@@ -17,9 +16,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .permissions import IsOwnUser
+from .authorization import IsOwnUser
+from .clazz import call_method_of_all_base_class_after_myself_and_overwrite_argument
 from .serializers import UserSerializer
-from .utilities import call_method_of_all_base_class_after_myself_and_overwrite_argument
 
 
 @extend_schema(exclude=True)

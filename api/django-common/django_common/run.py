@@ -1,4 +1,4 @@
-# Code copied from https://stackoverflow.com/questions/52232177/runtimeerror-timeout-context-manager-should-be-used-inside-a-task/69514930#69514930
+# Code copied from https://stackoverflow.com/questions/52232177/runtimeerror-timeout-context-manager-should-be-used-inside-a-task#69514930
 # An asyncio run implementation that runs in any environment e.g. Gunicorn.
 import asyncio
 import threading

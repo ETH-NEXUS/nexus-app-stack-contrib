@@ -1,28 +1,4 @@
-from rest_framework.routers import DefaultRouter
-
-from django_common.utilities import (call_method_of_all_base_class_after_myself_until_not_none,
-                                     camel_case_class_to_snake_case_string)
-
-
-class ViewSetClassNameBasedNameRouter(DefaultRouter):
-    def get_default_basename(self, viewset):
-        tmp = camel_case_class_to_snake_case_string(viewset)
-        if tmp.endswith("_view_set"):
-            return tmp[:-len("_view_set")]
-        raise ValueError
-
-
-class ViewSetClassNameRouter(ViewSetClassNameBasedNameRouter):
-    def __init__(self, schema, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.schema = schema
-
-    def registerViewSet(self, viewset):
-        basename = self.get_default_basename(viewset)
-        if basename.startswith(self.schema):
-            prefix = basename.replace(self.schema + "_", "", 1)
-            return self.register(prefix, viewset, basename)
-        raise ValueError
+from .clazz import call_method_of_all_base_class_after_myself_until_not_none
 
 
 class AppLabelConnectionRouter:
