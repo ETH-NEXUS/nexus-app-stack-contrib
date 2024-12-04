@@ -15,13 +15,10 @@ NEXUS_CONTRIB_DOWNLOAD_SCRIPT=raw.githubusercontent.com/ETH-NEXUS/nexus-app-stac
 
 ### Docker Compose
 
-Integrate the following lines in your Docker Compose file version 3.9:
+Integrate the following lines into your Docker Compose file by adding them under the service such as "api" or "ui" where
+you want to use the NEXUS app stack code.
 
 ```
-version: "3.9"
-
-services:
-  service1:
     build:
       args:
         ENVIRONMENT: "Production" # Only needs to be defined in your Docker Compose production file.
@@ -87,11 +84,23 @@ NEXUS App Stack <tt>api</tt> bootstrap command for the...
 
 All NEXUS app stack UI packages that you want to use in the project are specified in the last line of the `RUN` command.
 
-```
-RUN export ENVIRONMENT=$ENVIRONMENT BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
-  sh <(wget -q -O - https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
-  ui/vue-fileupload ui/vue-viewer
-```
+* Alpine Linux BusyBox Almquist shell:
+
+  ```
+  RUN export ENVIRONMENT=$ENVIRONMENT BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
+    sh <(wget -q -O - https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false) \
+    ui/vue-fileupload ui/vue-viewer
+  ```
+
+  See also the [Dockerfile.TINY_IMAGE](ui/TEMPLATES/Dockerfile.TINY_IMAGE) template.
+
+* Bash shell:
+
+  ```
+  RUN export ENVIRONMENT=$ENVIRONMENT BRANCH=$NEXUS_CONTRIB_REPOSITORY_BRANCH && \
+   bash -c "$(wget -q -O - https://$NEXUS_CONTRIB_DOWNLOAD_SCRIPT || echo false)" '' \
+    ui/vue-fileupload ui/vue-viewer
+  ```
 
 **Note:** The command was tested with an Alpine Linux BusyBox Almquist shell.
 
@@ -111,7 +120,7 @@ If you do not need to edit the code locally, you can reference it directly (in t
 NEXUS app stack specific Dockerfile adjustments):
 
 ```
-django-feature @ git+https://${NEXUS_CONTRIB_REPOSITORY_BRANCH}#subdirectory=api/django-feature
+django-feature@ git+https://${NEXUS_CONTRIB_REPOSITORY_BRANCH}#subdirectory=api/django-feature
 ```
 
 ### JavaScript
