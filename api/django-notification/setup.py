@@ -1,3 +1,1 @@
-from setuptools import setup
-
-setup()
+exec(open("../setup.py").read())
