@@ -25,9 +25,9 @@ class TableFunction(BaseTable):
         self.table_function_params = table_function_params  # type: List[Any]
 
     def as_sql(self, compiler, connection):
-        alias_str = '' if self.table_alias == self.table_name else (' %s' % self.table_alias)
-        base_sql = compiler.quote_name_unless_alias(self.table_name)
-        return '{}({}){}'.format(
+        alias_str = self.table_name if self.table_alias == self.table_name else self.table_alias
+        base_sql = compiler.quote_name_unless_alias('select_' + self.table_name)
+        return '{}({}) {}'.format(
             base_sql,
             ', '.join(['%s' for _ in range(len(self.table_function_params))]),
             alias_str
@@ -48,7 +48,11 @@ class TableFunctionJoin(Join):
         # to be able pass function instead of normal table into sql easily
         # result = re.match('.+ join .+ on (?P<on_clause_sql>.+)', sql, re.IGNORECASE | re.DOTALL)
         # on_clause_sql = result.group('on_clause_sql')
-        alias_and_on_clause_sql = sql[sql.find(" JOIN ") + 6:]
+        find_position = sql.find('" T')
+        if find_position >= 0:
+            alias_and_on_clause_sql = sql[find_position + 2:]
+        else:
+            alias_and_on_clause_sql = sql[sql.find(' JOIN ') + 6:]
 
         table_function_placeholders = []
         table_function_params = []
@@ -63,7 +67,7 @@ class TableFunctionJoin(Join):
 
         sql = '{} {}({}) {}'.format(
             self.join_type,
-            compiler.quote_name_unless_alias(self.table_name),
+            compiler.quote_name_unless_alias('select_' + self.table_name),
             ', '.join(table_function_placeholders),
             alias_and_on_clause_sql
         )

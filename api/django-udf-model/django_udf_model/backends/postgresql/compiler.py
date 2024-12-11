@@ -1,6 +1,7 @@
 from enum import Enum
 
 from django.core.exceptions import FullResultSet
+from django.db.models.fields.related_lookups import RelatedIn
 from django.db.models.sql import compiler
 
 
@@ -88,9 +89,14 @@ class SQLUpdateCompiler(compiler.SQLUpdateCompiler):
 class SQLDeleteCompiler(compiler.SQLDeleteCompiler):
 
     def _as_sql(self, query):
-        delete = 'SELECT %s_%s' % (Command.DELETE.value, query.base_table)
         try:
             rhs_sql, rhs_params = query.where.children[0].process_rhs(self, self.connection)
         except FullResultSet:
-            return delete + '()', ()
-        return delete + rhs_sql, tuple(rhs_params)
+            rhs_sql = '()'
+            rhs_params = ()
+        if isinstance(query.where.children[0], RelatedIn):
+            qn = self.quote_name_unless_alias
+            related_column_name, _ = query.where.children[0].process_lhs(self, self.connection)
+            rhs_sql = '__related(%s => %s)' % (qn(related_column_name[related_column_name.find('.') + 2:-1]), '%s')
+
+        return 'SELECT %s_%s%s' % (Command.DELETE.value, query.base_table, rhs_sql), tuple(rhs_params)
