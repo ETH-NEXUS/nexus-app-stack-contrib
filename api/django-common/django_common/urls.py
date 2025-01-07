@@ -33,15 +33,19 @@ class ViewSetClassNameBasedNameRouter(DefaultRouter):
             return tmp[:-len("_view_set")]
         raise ValueError
 
+    def registerViewSet(self, viewset, prefix = None):
+        basename = self.get_default_basename(viewset)
+        return self.register(f"{prefix + '/' if prefix else ''}{basename.replace('_', '/', 1)}", viewset, basename)
+
 
 class ViewSetClassNameRouter(ViewSetClassNameBasedNameRouter):
     def __init__(self, schema, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.schema = schema
 
-    def registerViewSet(self, viewset):
+    def registerViewSet(self, viewset, prefix = None):
+        assert prefix is None
         basename = self.get_default_basename(viewset)
         if basename.startswith(self.schema):
-            prefix = basename.replace(self.schema + "_", "", 1)
-            return self.register(prefix, viewset, basename)
+            return self.register(basename.replace(self.schema + "_", "", 1), viewset, basename)
         raise ValueError
