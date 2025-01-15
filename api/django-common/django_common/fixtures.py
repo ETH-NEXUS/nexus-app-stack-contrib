@@ -21,7 +21,7 @@ def has_fixtures_hook(clazz):
                 for function in functions:
                     function(instance)
 
-        pre_save.connect(pre_save_hock, sender=clazz)
+        pre_save.connect(pre_save_hock, sender=clazz, weak=False)
         return clazz
 
     raise Exception(
