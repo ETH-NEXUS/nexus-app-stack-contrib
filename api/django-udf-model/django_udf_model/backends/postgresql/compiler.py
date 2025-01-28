@@ -96,7 +96,9 @@ class SQLDeleteCompiler(compiler.SQLDeleteCompiler):
             rhs_params = ()
         if isinstance(query.where.children[0], RelatedIn):
             qn = self.quote_name_unless_alias
-            related_column_name, _ = query.where.children[0].process_lhs(self, self.connection)
-            rhs_sql = '__related(%s => %s)' % (qn(related_column_name[related_column_name.find('.') + 2:-1]), '%s')
+            rhs_sql = '__related(VARIADIC %s => %s)' % (qn(query.where.children[0].lhs.target.column + 's'), '%s')
+            params = (list(rhs_params),)
+        else:
+            params = tuple(rhs_params)
 
-        return 'SELECT %s_%s%s' % (Command.DELETE.value, query.base_table, rhs_sql), tuple(rhs_params)
+        return 'SELECT %s_%s%s' % (Command.DELETE.value, query.base_table, rhs_sql), params
