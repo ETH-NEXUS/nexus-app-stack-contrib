@@ -57,9 +57,10 @@ class EnhancedTextChoices(models.TextChoices):
 
 class Encoding(EnhancedTextChoices):
     ASCII = "ascii", _("ASCII")
-    UTF8 = "utf8", _("UTF-8")
     BINARY = "binary", _("Binary")
-
+    ISO88591 = "iso-8859-1", _("ISO 8859-1")
+    UTF8 = "utf-8", _("UTF-8")
+    UTF8SIG = "utf-8-sig", _("UTF-8-SIG")
 
 class MimeType(EnhancedTextChoices):
     PLAIN = "plain", "text/plain"
@@ -71,9 +72,10 @@ class MimeType(EnhancedTextChoices):
     # TODO Correct?
     CHAIN = "chain", "text/plain"
     # TODO Correct?
-    MD5 = "md5", "text/plain",
+    MD5 = "md5", "text/plain"
     # TODO Correct?
     SHA256 = "sha256", "text/plain"
+    GZ = "gz", "application/gzip"
 
 
 class Checksum(EnhancedTextChoices):
