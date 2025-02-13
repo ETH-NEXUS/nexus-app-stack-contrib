@@ -2,3 +2,4 @@
 -r django-common/requirements.txt
 -r django-fileupload/requirements.txt
 -r django-udf-model/requirements.txt
+-r django-udf-rpc/requirements.txt

@@ -1,14 +1,9 @@
-from enum import Enum
-
 from django.core.exceptions import FullResultSet
+from django.db.models import Subquery
 from django.db.models.fields.related_lookups import RelatedIn
 from django.db.models.sql import compiler
 
-
-class Command(Enum):
-    INSERT = 'insert'
-    UPDATE = 'update'
-    DELETE = 'delete'
+from django_udf_model import Command
 
 
 def complete_sql(command, c, fields_and_values, values, update_params):
@@ -77,9 +72,10 @@ class SQLUpdateCompiler(compiler.SQLUpdateCompiler):
         values, update_params = [], []
 
         try:
-            rhs_sql, rhs_params = self.query.where.children[0].process_rhs(self, self.connection)
-            values.append('id => %s' % rhs_sql)
-            update_params.append(rhs_params[0])
+            if len(self.query.where.children) > 0:
+                rhs_sql, rhs_params = self.query.where.children[0].process_rhs(self, self.connection)
+                values.append('id => %s' % rhs_sql)
+                update_params.append(rhs_params[0])
         except FullResultSet:
             pass
 
@@ -91,6 +87,8 @@ class SQLDeleteCompiler(compiler.SQLDeleteCompiler):
     def _as_sql(self, query):
         try:
             rhs_sql, rhs_params = query.where.children[0].process_rhs(self, self.connection)
+            if isinstance(query.where.children[0].rhs, Subquery):
+                rhs_sql = f'(VARIADIC array{rhs_sql})'
         except FullResultSet:
             rhs_sql = '()'
             rhs_params = ()

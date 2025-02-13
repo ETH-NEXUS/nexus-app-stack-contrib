@@ -1,3 +1,4 @@
+import uuid
 from collections import OrderedDict
 
 from django import forms
@@ -10,7 +11,7 @@ from django.db.models import Model
 from django.forms import formset_factory
 from django.forms.formsets import all_valid
 
-from .query import TableFunctionManager
+from .query import TableFunctionArg, TableFunctionManager
 
 
 class UdfConnectionRouter:
@@ -43,6 +44,20 @@ class UdfModel(Model):
         abstract = True
         managed = False
         base_manager_name = "objects"
+
+
+def create_dynamic_udf_model(name, fields, udf_parameters):
+    class Meta:
+        db_table = name
+        app_label = "django_udf_model"
+
+    attributes = {"__module__": "", "Meta": Meta}
+    attributes.update(fields)
+    attributes["function_args"] = OrderedDict((
+        (n, TableFunctionArg(required=True)) for n in udf_parameters
+    ))
+
+    return type(name + str(uuid.uuid1()).replace("-", ""), (UdfModel,), attributes)
 
 
 class UdfModelAdmin(ModelAdmin):
