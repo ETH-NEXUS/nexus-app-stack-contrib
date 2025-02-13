@@ -1,7 +1,10 @@
 from collections import OrderedDict
 
 from django import forms
+from django.contrib import messages
 from django.contrib.admin import ModelAdmin
+from django.contrib.messages import SUCCESS
+from django.contrib.messages.storage import default_storage
 from django.db import DatabaseError
 from django.db.models import Model
 from django.forms import formset_factory
@@ -57,10 +60,18 @@ class UdfModelAdmin(ModelAdmin):
             except DatabaseError as e:
                 self._database_error = e
         if hasattr(self, "_database_error"):
-            # Hack: afterwards the all_valid(formsets) function is called in the ModelAdmin._changeform_view(...) method
-            # and fails. As a result, the exception message is passed to the user interface.
+            request_messages = messages.get_messages(request)
+            if len(request_messages) > 0:
+                request._messages = default_storage(request)
+                for message in request_messages:
+                    if message.level != SUCCESS:
+                        messages.add_message(request, message.level, message.message, message.extra_tags)
+
             form.add_error(None, f"An error occurred: {str(self._database_error)}")
             del self._database_error
+
+            # Hack: afterwards the all_valid(formsets) function is called in the ModelAdmin._changeform_view(...) method
+            # and fails. As a result, the exception message is passed to the user interface.
             class Invalid(forms.Form):
                 pass
             self._formsets.append(formset_factory(Invalid)())
