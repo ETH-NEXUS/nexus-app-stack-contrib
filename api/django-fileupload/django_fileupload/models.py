@@ -23,9 +23,12 @@ class FileUploadBatch(OwnedModel):
 
 
 class FileUploadFileStorage(FileSystemStorage):
-
     def get_alternative_name(self, file_root, file_ext):
-        raise FileExistsError
+        # raise FileExistsError
+        index = 1
+        while self.exists(f"{file_root}_{index}{file_ext}"):
+            index += 1
+        return f"{file_root}_{index}{file_ext}"
 
 
 def generate_file_path(instance):
