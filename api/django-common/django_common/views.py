@@ -7,18 +7,18 @@ from django.core.handlers.wsgi import WSGIRequest
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
+from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.generic import View
-from drf_spectacular.utils import extend_schema
-from rest_framework import status, viewsets, mixins
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import status, viewsets
 from rest_framework import views
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.test import APIRequestFactory
+from rest_framework.views import APIView
 
 from .authorization import IsOwnUser
-from .clazz import call_method_of_all_base_class_after_myself_and_overwrite_argument
-from .mixins import AutoSchemaMixin
+from .clazz import call_method_of_all_base_class_and_overwrite_argument
 from .serializers import UserSerializer
 
 
@@ -31,16 +31,32 @@ class GenericAppViewSet(viewsets.GenericViewSet, AppApiView):
     pass
 
 
-class BakeAllBaseFilterViewSets(AutoSchemaMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
-    permission_classes = [IsAuthenticated]
+def bake_all_base_filter_view_sets(cls):
+    dummy_api_view = APIView()
+    dummy_api_view.request = APIRequestFactory().post(None)
+    dummy_api_view.kwargs = {}
 
-    def filter_queryset(self, queryset):
-        return call_method_of_all_base_class_after_myself_and_overwrite_argument(
-            BakeAllBaseFilterViewSets,
-            self,
-            "filter_queryset",
-            queryset
-        )
+    def get_override_parameters(c):
+        kwargs = getattr(getattr(c, "list"), "kwargs", {})
+        if "schema" in kwargs:
+            o = kwargs["schema"]()
+            o.view = dummy_api_view
+            return o.get_override_parameters()
+        return []
+
+    parameters = get_override_parameters(cls)
+    for c in cls.__bases__:
+        parameters.extend(get_override_parameters(c))
+
+    if len(parameters) > 0:
+        cls.filter_queryset = lambda self, queryset: call_method_of_all_base_class_and_overwrite_argument(
+                self,
+                "filter_queryset",
+                queryset
+            )
+        return extend_schema_view(list=extend_schema(parameters=parameters))(cls)
+
+    return cls
 
 
 class VersionView(AppApiView):
