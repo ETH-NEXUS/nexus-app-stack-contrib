@@ -10,7 +10,7 @@ from django.utils.translation import gettext as _
 from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework import views
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -18,7 +18,6 @@ from rest_framework.test import APIRequestFactory
 from rest_framework.views import APIView
 
 from .authorization import IsOwnUser
-from .clazz import call_method_of_all_base_class_and_overwrite_argument
 from .serializers import UserSerializer
 
 
@@ -37,7 +36,7 @@ def bake_all_base_filter_view_sets(cls):
     dummy_api_view.kwargs = {}
 
     def get_override_parameters(c):
-        kwargs = getattr(getattr(c, "list"), "kwargs", {})
+        kwargs = getattr(getattr(c, "list", None), "kwargs", {})
         if "schema" in kwargs:
             o = kwargs["schema"]()
             o.view = dummy_api_view
@@ -45,15 +44,21 @@ def bake_all_base_filter_view_sets(cls):
         return []
 
     parameters = get_override_parameters(cls)
-    for c in cls.__bases__:
-        parameters.extend(get_override_parameters(c))
+    for b in cls.__bases__:
+        parameters.extend(get_override_parameters(b))
 
     if len(parameters) > 0:
-        cls.filter_queryset = lambda self, queryset: call_method_of_all_base_class_and_overwrite_argument(
-                self,
-                "filter_queryset",
-                queryset
-            )
+        filter_queryset = cls.filter_queryset if "filter_queryset" in cls.__dict__ else None
+        valid_view_set_base_classes = tuple(b for b in cls.__bases__ if b not in (mixins.ListModelMixin, viewsets.GenericViewSet))
+
+        def new_filter_queryset(self, queryset):
+            if filter_queryset:
+                argument = filter_queryset(self, queryset)
+            for valid_view_set_base_class in valid_view_set_base_classes:
+                argument = getattr(valid_view_set_base_class, "filter_queryset")(self, queryset)
+            return argument
+
+        cls.filter_queryset = new_filter_queryset
         return extend_schema_view(list=extend_schema(parameters=parameters))(cls)
 
     return cls
