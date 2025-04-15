@@ -1,6 +1,7 @@
 import json
 from os import environ
 
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import get_user_model
 from django.core.handlers.wsgi import WSGIRequest
@@ -67,7 +68,9 @@ def bake_all_base_filter_view_sets(cls):
 class VersionView(AppApiView):
     @staticmethod
     def get(request):
-        return Response({"version": environ.get("GIT_VERSION") or "𝛼"})
+        return Response({"version": settings.SPECTACULAR_SETTINGS["VERSION"]
+            if hasattr(settings, "SPECTACULAR_SETTINGS") and "VERSION" in settings.SPECTACULAR_SETTINGS
+                else environ.get("GIT_VERSION") or "𝛼"})
 
 
 class CsrfCookieView(View):
