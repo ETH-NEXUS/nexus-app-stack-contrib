@@ -1,11 +1,12 @@
 from functools import wraps
 
+from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 
-from .access import get_field_access, Private, Admin, Group
+from .access import Access, AdminAccess, get_field_access, GroupAccess, PrivateAccess
 from .clazz import call_method_of_all_base_class_after_myself_until_not_none
 from .urls import ViewSetClassNameBasedNameRouter, ViewSetClassNameRouter
-from rest_framework import serializers
+
 
 class AppLabelConnectionRouter:
     def db_for_read(self, model, **hints):
@@ -95,45 +96,46 @@ class AccessControlRouterBase:
         self.is_public = is_public
         super().__init__(**kwargs)
 
+    def _is_authenticated(self, request):
+        return request.user.is_authenticated
+
+    def _is_admin(self, request):
+        return self._is_authenticated(request) and request.user.is_staff
+
     def _filter_fields_by_access(self, serializer, request):
-        is_admin = request.user.is_authenticated and request.user.is_staff
-        is_authenticated = request.user.is_authenticated
+        fields_to_remove = []
 
         if isinstance(serializer, serializers.ListSerializer):
             target = serializer.child
         else:
             target = serializer
 
-        model_class = None
-        if hasattr(target, 'Meta') and hasattr(target.Meta, 'model'):
-            model_class = target.Meta.model
-        else:
-            return serializer
+        if hasattr(target, "Meta") and hasattr(target.Meta, "model"):
+            model_fields = {}
 
-        fields_to_remove = []
+            for field in target.Meta.model._meta.get_fields():
+                if hasattr(field, "name"):
+                    model_fields[field.name] = get_field_access(field)
 
-        model_fields = {}
-        for field in model_class._meta.get_fields():
-            if hasattr(field, 'name'):
-                model_fields[field.name] = get_field_access(field)
+            for field_name in target.fields.keys():
+                if field_name in model_fields:
+                    access = model_fields[field_name]
 
-        for field_name, field in target.fields.items():
-            if field_name not in model_fields:
-                continue
+                    # Handle different access types.
+                    if type(access) == Access:
+                        continue
+                    elif type(access) == PrivateAccess and self._is_authenticated(request):
+                        continue
+                    elif type(access) == AdminAccess and self._is_admin(request):
+                        continue
+                    elif type(access) == GroupAccess and self._is_authenticated(request) and request.user.groups.filter(
+                            name=access.group_name).exists():
+                        continue
 
-            access = model_fields[field_name]
-
-            # Handle different access types
-            if isinstance(access, Private) and not is_authenticated:
-                fields_to_remove.append(field_name)
-            elif isinstance(access, Admin) and (not is_authenticated or not is_admin):
-                fields_to_remove.append(field_name)
-            elif isinstance(access, Group) and (not is_authenticated or
-                                                not request.user.groups.filter(name=access.group_name).exists()):
-                fields_to_remove.append(field_name)
+                    fields_to_remove.append(field_name)
 
         for field_name in fields_to_remove:
-            target.fields.pop(field_name, None)
+            target.fields.pop(field_name)
 
         return serializer
 
@@ -142,15 +144,19 @@ class AccessControlRouterBase:
             viewset_class.permission_classes = (AllowAny,)
 
         original_get_serializer = viewset_class.get_serializer
+        is_public = self.is_public
+        _filter_fields_by_access = self._filter_fields_by_access
 
-        # Create new get_serializer method that filters fields
+        # Create new get_serializer method that filters serializers and their fields.
         @wraps(original_get_serializer)
         def new_get_serializer(self, *args, **kwargs):
-            serializer = original_get_serializer(self, *args, **kwargs)
-            return self.router._filter_fields_by_access(serializer, self.request)
+            nonlocal is_public
+            if is_public or self.request.user.is_authenticated:
+                serializer = original_get_serializer(self, *args, **kwargs)
+                return _filter_fields_by_access(serializer, self.request)
+            return None
 
         viewset_class.get_serializer = new_get_serializer
-        viewset_class.router = self
 
         return viewset_class
 
@@ -173,15 +179,15 @@ class SchemaAccessControlRouter(AccessControlRouterBase, ViewSetClassNameRouter)
     pass
 
 
-def PublicRouter(schema=None, **kwargs):
-    kwargs['is_public'] = True
+def create_public_router(schema=None, **kwargs):
+    kwargs["is_public"] = True
     if schema is not None:
         return SchemaAccessControlRouter(schema=schema, **kwargs)
     return AccessControlRouter(**kwargs)
 
 
-def PrivateRouter(schema=None, **kwargs):
-    kwargs['is_public'] = False
+def create_private_router(schema=None, **kwargs):
+    kwargs["is_public"] = False
     if schema is not None:
         return SchemaAccessControlRouter(schema=schema, **kwargs)
     return AccessControlRouter(**kwargs)

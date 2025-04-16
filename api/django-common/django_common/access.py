@@ -4,7 +4,7 @@ Field-level access control for Django models.
 This module provides a mechanism to define access control at the field level.
 
 Usage:
-    from django_common.access import limit_access, PRIVATE_ACCESS, ADMIN_ACCESS, PUBLIC_ACCESS, Group
+    from django_common.access import ADMIN_ACCESS, GroupAccess, limit_access, NOBODY_ACCESS, PRIVATE_ACCESS
 
     class MyModel(models.Model):
         # Public field - accessible to all users (default)
@@ -17,13 +17,16 @@ Usage:
         admin_field = limit_access(models.CharField(max_length=100), ADMIN_ACCESS)
         
         # Group field - only accessible to users in the specified group
-        group_field = limit_access(models.CharField(max_length=100), Group('group_name'))
+        group_field = limit_access(models.CharField(max_length=100), GroupAccess("group_name"))
+
+        # Foreign key field - nobody is allowed to access it
+        other_model = limit_access(models.ForeignKey(OtherModel), NOBODY_ACCESS)
 
     # Get all fields with a specific access type
     private_fields = get_model_fields_by_access(MyModel, Private)
     
     # Get access type for a specific field
-    field = MyModel._meta.get_field('private_field')
+    field = MyModel._meta.get_field("private_field")
     access = get_field_access(field)
 """
 
@@ -31,22 +34,27 @@ class Access:
     pass
 
 
-class Private(Access):
+class PrivateAccess(Access):
     pass
 
 
-class Admin(Access):
-    pass
-
-
-class Group(Access):
+class GroupAccess(Access):
     def __init__(self, group_name=None):
         self.group_name = group_name
 
 
-PRIVATE_ACCESS = Private()
-ADMIN_ACCESS = Admin()
-PUBLIC_ACCESS = Access()  # Default access - available to all
+class AdminAccess(Access):
+    pass
+
+
+class NobodyAccess(Access):
+    pass
+
+
+PUBLIC_ACCESS = Access() # Default access - available to all
+PRIVATE_ACCESS = PrivateAccess()
+ADMIN_ACCESS = AdminAccess()
+NOBODY_ACCESS = NobodyAccess()
 
 
 def limit_access(field, access):

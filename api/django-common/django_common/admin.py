@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .clazz import create_anonymous_class
+from .clazz import create_dynamic_class
 
 
 def create_model_admin(model_admin, name, model, verbose_name=None, verbose_name_plural=None):
@@ -18,7 +18,7 @@ def create_model_admin(model_admin, name, model, verbose_name=None, verbose_name
     if verbose_name_plural is not None:
         Meta.verbose_name_plural = verbose_name_plural
 
-    new_model = create_anonymous_class(name, model, {"__module__": "", "Meta": Meta})
+    new_model = create_dynamic_class(name, model, {"__module__": "", "Meta": Meta})
     admin.site.register(new_model, model_admin)
     return model_admin
 

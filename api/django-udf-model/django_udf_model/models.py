@@ -10,7 +10,7 @@ from django.db.models import Model
 from django.forms import formset_factory
 from django.forms.formsets import all_valid
 
-from django_common.clazz import create_anonymous_class
+from django_common.clazz import create_dynamic_class
 from .query import TableFunctionArg, TableFunctionManager
 
 
@@ -57,7 +57,7 @@ def create_dynamic_udf_model(name, fields, udf_parameters):
         (n, TableFunctionArg(required=True)) for n in udf_parameters
     ))
 
-    return create_anonymous_class(name, UdfModel, attributes, True)
+    return create_dynamic_class(name, UdfModel, attributes, True)
 
 
 class UdfModelAdmin(ModelAdmin):

@@ -5,7 +5,7 @@ from django.urls import re_path
 from django.views.static import serve
 from rest_framework.routers import DefaultRouter
 
-from .clazz import create_anonymous_class
+from .clazz import create_dynamic_class
 from .string import camel_case_class_to_snake_case_string
 
 
@@ -28,7 +28,7 @@ def static_path(prefix, view=serve, **kwargs):
 
 
 def change_permission_classes(view_set, permission_classes):
-    return create_anonymous_class(view_set.__name__, view_set, {"permission_classes": permission_classes})
+    return create_dynamic_class(view_set.__name__, view_set, {"permission_classes": permission_classes})
 
 
 class ViewSetClassNameBasedNameRouter(DefaultRouter):

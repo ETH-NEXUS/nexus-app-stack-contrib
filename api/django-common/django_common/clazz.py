@@ -1,10 +1,10 @@
 import uuid
 
 
-def create_anonymous_class(name, base, attributes, add_random_string_to_name=False):
+def create_dynamic_class(name, base, attributes={}, add_random_string_to_name=False):
     return type(
         name if not add_random_string_to_name else name + str(uuid.uuid1()).replace("-", ""),
-        (base,),
+        (base,) if not isinstance(base, tuple) else base,
         attributes
     )
 
