@@ -1,3 +1,14 @@
+import uuid
+
+
+def create_anonymous_class(name, base, attributes, add_random_string_to_name=False):
+    return type(
+        name if not add_random_string_to_name else name + str(uuid.uuid1()).replace("-", ""),
+        (base,),
+        attributes
+    )
+
+
 def call_method_of_all_base_class_and_overwrite_argument(o, method_name, argument):
     for c in o.__class__.__bases__:
         argument = getattr(c, method_name)(o, argument)

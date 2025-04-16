@@ -1,4 +1,3 @@
-import uuid
 from collections import OrderedDict
 
 from django import forms
@@ -11,6 +10,7 @@ from django.db.models import Model
 from django.forms import formset_factory
 from django.forms.formsets import all_valid
 
+from django_common.clazz import create_anonymous_class
 from .query import TableFunctionArg, TableFunctionManager
 
 
@@ -57,7 +57,7 @@ def create_dynamic_udf_model(name, fields, udf_parameters):
         (n, TableFunctionArg(required=True)) for n in udf_parameters
     ))
 
-    return type(name + str(uuid.uuid1()).replace("-", ""), (UdfModel,), attributes)
+    return create_anonymous_class(name, UdfModel, attributes, True)
 
 
 class UdfModelAdmin(ModelAdmin):
