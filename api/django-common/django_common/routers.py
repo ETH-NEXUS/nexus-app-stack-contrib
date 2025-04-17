@@ -87,20 +87,19 @@ class CakeConnectionRouter:
         )
 
 
-class AccessControlRouterBase:
+class AccessControlRouter:
     """
     Base mixin that provides field-level access control for routers.
     """
-
-    def __init__(self, is_public=False, **kwargs):
-        self.is_public = is_public
-        super().__init__(**kwargs)
 
     def _is_authenticated(self, request):
         return request.user.is_authenticated
 
     def _is_admin(self, request):
         return self._is_authenticated(request) and request.user.is_staff
+
+    def _include_schema(self, request):
+        return self._is_authenticated(request)
 
     def _filter_fields_by_access(self, serializer, request):
         fields_to_remove = []
@@ -140,18 +139,14 @@ class AccessControlRouterBase:
         return serializer
 
     def _apply_access_control(self, viewset_class):
-        if self.is_public:
-            viewset_class.permission_classes = (AllowAny,)
-
         original_get_serializer = viewset_class.get_serializer
-        is_public = self.is_public
+        _include_schema = self._include_schema
         _filter_fields_by_access = self._filter_fields_by_access
 
         # Create new get_serializer method that filters serializers and their fields.
         @wraps(original_get_serializer)
         def new_get_serializer(self, *args, **kwargs):
-            nonlocal is_public
-            if is_public or self.request.user.is_authenticated:
+            if _include_schema(self.request):
                 serializer = original_get_serializer(self, *args, **kwargs)
                 return _filter_fields_by_access(serializer, self.request)
             return None
@@ -160,34 +155,26 @@ class AccessControlRouterBase:
 
         return viewset_class
 
+
+class PublicAccessControlRouter(AccessControlRouter):
+    def _include_schema(self, request):
+        return True
+
+    def _apply_access_control(self, viewset_class):
+        viewset_class = super()._apply_access_control(viewset_class)
+        viewset_class.permission_classes = (AllowAny,)
+        return viewset_class
+
+
+class ViewSetClassNameBasedNameRouterAccessControlRouter(ViewSetClassNameBasedNameRouter, AccessControlRouter):
     def register(self, prefix, viewset, basename=None, **kwargs):
         """Register a viewset with access control policies applied."""
         secured_viewset = self._apply_access_control(viewset)
         super().register(prefix, secured_viewset, basename, **kwargs)
 
-    def registerViewSet(self, viewset_class, *args, **kwargs):
+
+class ViewSetClassNameRouterAccessControlRouter(ViewSetClassNameRouter, AccessControlRouter):
+    def registerViewSet(self, viewset, *args, **kwargs):
         """Register a viewset with access control policies applied."""
-        secured_viewset = self._apply_access_control(viewset_class)
+        secured_viewset = self._apply_access_control(viewset)
         super().registerViewSet(secured_viewset, *args, **kwargs)
-
-
-class AccessControlRouter(AccessControlRouterBase, ViewSetClassNameBasedNameRouter):
-    pass
-
-
-class SchemaAccessControlRouter(AccessControlRouterBase, ViewSetClassNameRouter):
-    pass
-
-
-def create_public_router(schema=None, **kwargs):
-    kwargs["is_public"] = True
-    if schema is not None:
-        return SchemaAccessControlRouter(schema=schema, **kwargs)
-    return AccessControlRouter(**kwargs)
-
-
-def create_private_router(schema=None, **kwargs):
-    kwargs["is_public"] = False
-    if schema is not None:
-        return SchemaAccessControlRouter(schema=schema, **kwargs)
-    return AccessControlRouter(**kwargs)
