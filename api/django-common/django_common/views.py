@@ -120,6 +120,13 @@ class UserViewSet(GenericAppViewSet):
 
     @action(detail=False, methods=("get",))
     def me(self, request):
+
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "User not authenticated."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
         user = self.get_queryset().get(id=request.user.id)
         serializer = self.get_serializer(user)
         return Response(serializer.data)
