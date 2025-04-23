@@ -4,9 +4,9 @@ from functools import wraps
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import re_path
 from django.views.static import serve
-from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.routers import DefaultRouter
+from rest_framework.serializers import ListSerializer, ModelSerializer
 
 from .access import Access, AdminAccess, get_field_access, GroupAccess, PrivateAccess
 from .clazz import create_dynamic_class
@@ -75,23 +75,15 @@ class AccessControlRouter:
         return self._is_authenticated(request)
 
     def _filter_fields_by_access(self, serializer, request):
-        fields_to_remove = []
+        serializers = [serializer]
+        while len(serializers) > 0:
+            s = serializers.pop()
+            if isinstance(s, ListSerializer):
+                s = s.child
 
-        if isinstance(serializer, serializers.ListSerializer):
-            target = serializer.child
-        else:
-            target = serializer
-
-        if hasattr(target, "Meta") and hasattr(target.Meta, "model"):
-            model_fields = {}
-
-            for field in target.Meta.model._meta.get_fields():
-                if hasattr(field, "name"):
-                    model_fields[field.name] = get_field_access(field)
-
-            for field_name in target.fields.keys():
-                if field_name in model_fields:
-                    access = model_fields[field_name]
+            if isinstance(s, ModelSerializer):
+                for field in s.Meta.model._meta.get_fields():
+                    access = get_field_access(field)
 
                     # Handle different access types.
                     if type(access) == Access:
@@ -104,10 +96,10 @@ class AccessControlRouter:
                             name=access.group_name).exists():
                         continue
 
-                    fields_to_remove.append(field_name)
+                    s.fields.pop(field.name)
 
-        for field_name in fields_to_remove:
-            target.fields.pop(field_name)
+                serializers.extend([v for v in s.fields.values() if isinstance(v, ModelSerializer)
+                                    or isinstance(v, ListSerializer)])
 
         return serializer
 
