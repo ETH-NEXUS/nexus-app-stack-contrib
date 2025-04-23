@@ -98,8 +98,7 @@ class AccessControlRouter:
 
                     s.fields.pop(field.name)
 
-                serializers.extend([v for v in s.fields.values() if isinstance(v, ModelSerializer)
-                                    or isinstance(v, ListSerializer)])
+                serializers.extend([v for v in s.fields.values() if isinstance(v, (ModelSerializer, ListSerializer))])
 
         return serializer
 
