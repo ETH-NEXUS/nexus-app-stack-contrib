@@ -3,7 +3,6 @@ from drf_spectacular.openapi import AutoSchema
 
 
 class CustomAutoSchema(AutoSchema):
-
     def get_tags(self):
         """
         Categorize endpoints based on the first meaningful path segment, ignoring "public" or "private" prefixes.
