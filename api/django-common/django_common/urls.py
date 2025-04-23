@@ -96,7 +96,7 @@ class AccessControlRouter:
                             name=access.group_name).exists():
                         continue
 
-                    s.fields.pop(field.name)
+                    s.fields.pop(field.name, None)
 
                 serializers.extend([v for v in s.fields.values() if isinstance(v, (ModelSerializer, ListSerializer))])
 
