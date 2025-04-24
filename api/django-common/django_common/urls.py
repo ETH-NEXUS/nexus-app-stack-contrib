@@ -83,20 +83,21 @@ class AccessControlRouter:
 
             if isinstance(s, ModelSerializer):
                 for field in s.Meta.model._meta.get_fields():
-                    access = get_field_access(field)
+                    if field.name in s.fields:
+                        access = get_field_access(field)
 
-                    # Handle different access types.
-                    if type(access) == Access:
-                        continue
-                    elif type(access) == PrivateAccess and self._is_authenticated(request):
-                        continue
-                    elif type(access) == AdminAccess and self._is_admin(request):
-                        continue
-                    elif type(access) == GroupAccess and self._is_authenticated(request) and request.user.groups.filter(
-                            name=access.group_name).exists():
-                        continue
+                        # Handle different access types.
+                        if type(access) == Access:
+                            continue
+                        elif type(access) == PrivateAccess and self._is_authenticated(request):
+                            continue
+                        elif type(access) == AdminAccess and self._is_admin(request):
+                            continue
+                        elif (type(access) == GroupAccess and self._is_authenticated(request)
+                              and request.user.groups.filter(name=access.group_name).exists()):
+                            continue
 
-                    s.fields.pop(field.name, None)
+                        s.fields.pop(field.name)
 
                 serializers.extend([v for v in s.fields.values() if isinstance(v, (ModelSerializer, ListSerializer))])
 
