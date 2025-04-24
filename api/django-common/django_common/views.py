@@ -1,74 +1,76 @@
 import json
 from os import environ
 
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import get_user_model
 from django.core.handlers.wsgi import WSGIRequest
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
+from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.generic import View
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import mixins, status, viewsets
 from rest_framework import views
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.test import APIRequestFactory
+from rest_framework.views import APIView
 
 from .authorization import IsOwnUser
-from .clazz import call_method_of_all_base_class_after_myself_and_overwrite_argument
 from .serializers import UserSerializer
 
 
 @extend_schema(exclude=True)
 class AppApiView(views.APIView):
-    swagger_schema = None
+    pass
 
 
 class GenericAppViewSet(viewsets.GenericViewSet, AppApiView):
     pass
 
 
-class BakeAllBaseFilterViewSets(mixins.ListModelMixin, viewsets.GenericViewSet):
-    # TODO Does this belong here?
-    permission_classes = (IsAuthenticated,)
+def bake_all_base_filter_view_sets(cls):
+    dummy_api_view = APIView()
+    dummy_api_view.request = APIRequestFactory().post(None)
+    dummy_api_view.kwargs = {}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        check = False
-        # TODO OpenAPI 3 (drf-spectacular)
-        swagger_auto_schema = {"manual_parameters": []}
-        for c in self.__class__.__bases__:
-            if c == BakeAllBaseFilterViewSets:
-                check = True
-            if check:
-                tmp = getattr(getattr(super(c, self), "list", {}), '_swagger_auto_schema', {})
-                if "manual_parameters" in tmp:
-                    swagger_auto_schema["manual_parameters"] = (swagger_auto_schema["manual_parameters"]
-                                                                + tmp["manual_parameters"])
+    def get_override_parameters(c):
+        kwargs = getattr(getattr(c, "list", None), "kwargs", {})
+        if "schema" in kwargs:
+            o = kwargs["schema"]()
+            o.view = dummy_api_view
+            return o.get_override_parameters()
+        return []
 
-        self._original_list = self.list
+    parameters = get_override_parameters(cls)
+    for b in cls.__bases__:
+        parameters.extend(get_override_parameters(b))
 
-        def new_list(request, *_args, **_kwargs):
-            return self._original_list(request, *_args, **_kwargs)
+    if len(parameters) > 0:
+        filter_queryset = cls.filter_queryset if "filter_queryset" in cls.__dict__ else None
+        valid_view_set_base_classes = tuple(b for b in cls.__bases__ if b not in (mixins.ListModelMixin, viewsets.GenericViewSet))
 
-        self.list = new_list
-        self.list._swagger_auto_schema = swagger_auto_schema
+        def new_filter_queryset(self, queryset):
+            if filter_queryset:
+                argument = filter_queryset(self, queryset)
+            for valid_view_set_base_class in valid_view_set_base_classes:
+                argument = getattr(valid_view_set_base_class, "filter_queryset")(self, queryset)
+            return argument
 
-    def filter_queryset(self, queryset):
-        return call_method_of_all_base_class_after_myself_and_overwrite_argument(
-            BakeAllBaseFilterViewSets,
-            self,
-            "filter_queryset",
-            queryset
-        )
+        cls.filter_queryset = new_filter_queryset
+        return extend_schema_view(list=extend_schema(parameters=parameters))(cls)
+
+    return cls
 
 
 class VersionView(AppApiView):
     @staticmethod
     def get(request):
-        return Response({"version": environ.get("GIT_VERSION") or "𝛼"})
+        return Response({"version": settings.SPECTACULAR_SETTINGS["VERSION"]
+            if hasattr(settings, "SPECTACULAR_SETTINGS") and "VERSION" in settings.SPECTACULAR_SETTINGS
+                else environ.get("GIT_VERSION") or "𝛼"})
 
 
 class CsrfCookieView(View):
@@ -83,7 +85,7 @@ class LoginView(View):
         username = data.get("username")
         password = data.get("password")
 
-        if username is None or password is None:
+        if not username or not password:
             return JsonResponse(
                 {"detail": _("Please provide username and password.")},
                 status=status.HTTP_400_BAD_REQUEST,

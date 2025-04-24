@@ -3,6 +3,8 @@ from os import path
 
 from django.http import FileResponse
 from django.utils.translation import gettext_lazy as _
+from drf_spectacular.utils import extend_schema
+from python_utilities.crypto import generate_checksum_from_chunks
 from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -13,9 +15,8 @@ from rest_framework.serializers import ValidationError
 from django_common.postgresql import exclusive_insert_table_lock
 from django_common.renderers import PassthroughRenderer
 from django_fileupload.models import FileUpload, FileUploadBatch
-from django_fileupload.serializers import (DrfYasgWorkaroundFileUploadBatchSerializer, FileUploadBatchSerializer,
-                                           FileUploadSerializer)
-from python_utilities.crypto import generate_checksum_from_chunks
+from django_fileupload.serializers import (FileUploadBatchSerializer,
+                                           FileUploadSerializer, FileUploadBatchCreateSerializer)
 
 
 class FileUploadBatchViewSet(
@@ -27,10 +28,9 @@ class FileUploadBatchViewSet(
     serializer_class = FileUploadBatchSerializer
     parser_classes = (MultiPartParser,)
 
-    # Workaround for "drf-yasg" (see https://github.com/axnsan12/drf-yasg/issues/503).
     def get_serializer_class(self):
         if self.action == "create":
-            return DrfYasgWorkaroundFileUploadBatchSerializer
+            return FileUploadBatchCreateSerializer
         return self.serializer_class
 
     def add_metadata(self, request, file_upload_batch):
@@ -45,6 +45,10 @@ class FileUploadBatchViewSet(
     def verify_file_count(self, request, count):
         return True
 
+    @extend_schema(
+        request=FileUploadBatchCreateSerializer,
+        responses=FileUploadBatchSerializer,
+    )
     def create(self, request, *args, **kwargs):
         if request.FILES:
             files = request.FILES.getlist("files")
@@ -52,8 +56,12 @@ class FileUploadBatchViewSet(
                 for file_position, file in enumerate(files):
                     file_name_parts = os.path.splitext(file.name)
                     if self.verify_file_extension(request, file_position, file_name_parts):
-                        if self.verify_file_checksum(request, file_position, file_name_parts,
-                                                     generate_checksum_from_chunks(file.chunks())):
+                        if self.verify_file_checksum(
+                                request,
+                                file_position,
+                                file_name_parts,
+                                generate_checksum_from_chunks(file.chunks()),
+                        ):
                             continue
                         raise ValidationError(_("Incorrect or no checksums in the request."))
                     raise ValidationError(_("Files with incorrect extension in the request."))

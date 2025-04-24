@@ -1,6 +1,17 @@
+import uuid
+
+
+def create_dynamic_class(name, base, attributes={}, add_random_string_to_name=False):
+    return type(
+        name if not add_random_string_to_name else name + str(uuid.uuid1()).replace("-", ""),
+        (base,) if not isinstance(base, tuple) else base,
+        attributes
+    )
+
+
 def call_method_of_all_base_class_and_overwrite_argument(o, method_name, argument):
     for c in o.__class__.__bases__:
-        argument = getattr(super(c, o), method_name)(argument)
+        argument = getattr(c, method_name)(o, argument)
     return argument
 
 
@@ -10,13 +21,13 @@ def call_method_of_all_base_class_after_myself_and_overwrite_argument(myself_typ
         if c == myself_type:
             check = True
         if check:
-            argument = getattr(super(c, o), method_name)(argument)
+            argument = getattr(c, method_name)(o, argument)
     return argument
 
 
 def call_method_of_all_base_class_until_not_none(o, method_name, *args, **kwargs):
     for c in o.__class__.__bases__:
-        result = getattr(super(c, o), method_name)(*args, **kwargs)
+        result = getattr(c, method_name)(o, *args, **kwargs)
         if result is not None:
             return result
     return None
@@ -28,7 +39,7 @@ def call_method_of_all_base_class_after_myself_until_not_none(myself_type, o, me
         if c == myself_type:
             check = True
         if check:
-            result = getattr(super(c, o), method_name)(*args, **kwargs)
+            result = getattr(c, method_name)(o, *args, **kwargs)
             if result is not None:
                 return result
     return None
