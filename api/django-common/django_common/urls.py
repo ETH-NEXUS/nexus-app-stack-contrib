@@ -1,5 +1,4 @@
 import re
-from functools import wraps
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import re_path
@@ -103,13 +102,12 @@ class AccessControlRouter:
 
         return serializer
 
-    def _apply_access_control(self, viewset_class):
+    def apply_access_control(self, viewset_class):
         original_get_serializer = viewset_class.get_serializer
         _include_schema = self._include_schema
         _filter_fields_by_access = self._filter_fields_by_access
 
         # Create new get_serializer method that filters serializers and their fields.
-        @wraps(original_get_serializer)
         def new_get_serializer(self, *args, **kwargs):
             if _include_schema(self.request):
                 serializer = original_get_serializer(self, *args, **kwargs)
@@ -120,13 +118,26 @@ class AccessControlRouter:
 
         return viewset_class
 
+    def apply_filtering(self, viewset_class, get_filter_queryset_function):
+        model = viewset_class.queryset.model
+        filter_queryset = get_filter_queryset_function(model)
+        if filter_queryset:
+            original_filter_queryset = viewset_class.filter_queryset
+            def new_filter_queryset(self, queryset):
+                queryset = original_filter_queryset(self, queryset)
+                queryset = filter_queryset(queryset, self.request)
+                return queryset
+            viewset_class.filter_queryset = new_filter_queryset
+
+        return viewset_class
+
 
 class PublicAccessControlRouter(AccessControlRouter):
     def _include_schema(self, request):
         return True
 
-    def _apply_access_control(self, viewset_class):
-        viewset_class = super()._apply_access_control(viewset_class)
+    def apply_access_control(self, viewset_class):
+        viewset_class = super().apply_access_control(viewset_class)
         viewset_class.permission_classes = (AllowAny,)
         return viewset_class
 
@@ -134,12 +145,12 @@ class PublicAccessControlRouter(AccessControlRouter):
 class ViewSetClassNameBasedNameRouterAccessControlRouter(ViewSetClassNameBasedNameRouter, AccessControlRouter):
     def register(self, prefix, viewset, basename=None, **kwargs):
         """Register a viewset with access control policies applied."""
-        secured_viewset = self._apply_access_control(viewset)
-        super().register(prefix, secured_viewset, basename, **kwargs)
+        whitelisted_viewset = self.apply_access_control(viewset)
+        super().register(prefix, whitelisted_viewset, basename, **kwargs)
 
 
 class ViewSetClassNameRouterAccessControlRouter(ViewSetClassNameRouter, AccessControlRouter):
     def registerViewSet(self, viewset, *args, **kwargs):
         """Register a viewset with access control policies applied."""
-        secured_viewset = self._apply_access_control(viewset)
-        super().registerViewSet(secured_viewset, *args, **kwargs)
+        whitelisted_viewset = self.apply_access_control(viewset)
+        super().registerViewSet(whitelisted_viewset, *args, **kwargs)
