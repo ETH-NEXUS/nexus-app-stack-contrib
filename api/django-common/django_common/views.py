@@ -54,10 +54,10 @@ def bake_all_base_filter_view_sets(cls):
 
         def new_filter_queryset(self, queryset):
             if filter_queryset:
-                argument = filter_queryset(self, queryset)
+                queryset = filter_queryset(self, queryset)
             for valid_view_set_base_class in valid_view_set_base_classes:
-                argument = getattr(valid_view_set_base_class, "filter_queryset")(self, queryset)
-            return argument
+                queryset = getattr(valid_view_set_base_class, "filter_queryset")(self, queryset)
+            return queryset
 
         cls.filter_queryset = new_filter_queryset
         return extend_schema_view(list=extend_schema(parameters=parameters))(cls)
