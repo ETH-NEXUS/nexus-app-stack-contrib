@@ -145,11 +145,7 @@ class TableFunctionQuery(Query):
 
         return join_info
 
-    def table_function(self, **table_function_params: Dict[str, Any]):
-        """
-        Take user's passed params and store them in `self.table_function_params`
-        to be prepared for joining.
-        """
+    def get_table_function_params(self, **table_function_params: Dict[str, Any]) -> List[TableFunctionParams]:
         _table_function_params = []
         for table_lookup, param_dict in self._table_function_params_to_groups(table_function_params).items():
             if not table_lookup:
@@ -171,9 +167,15 @@ class TableFunctionQuery(Query):
                     params=self._reorder_table_function_params(model, param_dict)
                 )
             )
+        return _table_function_params
 
+    def table_function(self, **table_function_params: Dict[str, Any]):
+        """
+        Take user's passed params and store them in `self.table_function_params`
+        to be prepared for joining.
+        """
         # TODO: merge with existing?
-        self.table_function_params = _table_function_params
+        self.table_function_params = self.get_table_function_params(**table_function_params)
 
     def _table_function_params_to_groups(self, table_function_params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -229,6 +231,18 @@ class TableFunctionQuerySet(QuerySet):
 
     def table_function(self, **table_function_params: Dict[str, Any]) -> 'TableFunctionQuerySet':
         self.query.table_function(**table_function_params)
+        return self
+
+    def add_optional_function_arguments(self, **table_function_params: Dict[str, Any]) -> 'TableFunctionQuerySet':
+        table_function_params = self.query.get_table_function_params(**table_function_params)
+        try:
+            params = list(
+                next(filter(lambda x: x.level == 0, table_function_params)).params.values()
+            )  # type: List[Any]
+            self.query.alias_map[self.query.get_initial_alias()].table_function_params.extend(params)
+        except StopIteration:
+            # Do nothing.
+            pass
         return self
 
     def _update(self, values):
