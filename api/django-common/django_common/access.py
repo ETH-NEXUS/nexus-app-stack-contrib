@@ -30,31 +30,51 @@ Usage:
     access = get_field_access(field)
 """
 
-class Access:
-    pass
+class _Access:
+    def __str__(self):
+        return "PUBLIC_ACCESS"
 
 
-class PrivateAccess(Access):
-    pass
+class _PrivateAccess(_Access):
+    def __str__(self):
+        return "PRIVATE_ACCESS"
 
 
-class GroupAccess(Access):
+class _AdminAccess(_Access):
+    def __str__(self):
+        return "ADMIN_ACCESS"
+
+
+class _NobodyAccess(_Access):
+    def __str__(self):
+        return "NOBODY_ACCESS"
+
+
+class GroupAccess(_Access):
     def __init__(self, group_name=None):
         self.group_name = group_name
 
-
-class AdminAccess(Access):
-    pass
-
-
-class NobodyAccess(Access):
-    pass
+    def __str__(self):
+        raise NotImplementedError
 
 
-PUBLIC_ACCESS = Access() # Default access - available to all
-PRIVATE_ACCESS = PrivateAccess()
-ADMIN_ACCESS = AdminAccess()
-NOBODY_ACCESS = NobodyAccess()
+PUBLIC_ACCESS = _Access() # Default access - available to all
+PRIVATE_ACCESS = _PrivateAccess()
+ADMIN_ACCESS = _AdminAccess()
+NOBODY_ACCESS = _NobodyAccess()
+
+
+def _get_access_object(string):
+    match string:
+        case "PUBLIC_ACCESS":
+            return PUBLIC_ACCESS
+        case "PRIVATE_ACCESS":
+            return PRIVATE_ACCESS
+        case "ADMIN_ACCESS":
+            return ADMIN_ACCESS
+        case "NOBODY_ACCESS":
+            return NOBODY_ACCESS
+    raise NotImplementedError()
 
 
 def limit_access(field, access):
@@ -63,9 +83,35 @@ def limit_access(field, access):
     return field
 
 
-def get_field_access(field):
+def _get_field_access(field):
     access = getattr(field, "_access", PUBLIC_ACCESS)
     return access
+
+
+def _is_authenticated(request):
+    return request.user.is_authenticated
+
+
+def _is_admin(request):
+    return _is_authenticated(request) and request.user.is_staff
+
+
+def _has_access(access, request):
+    assert access and request
+    if type(access) == _Access:
+        return True
+    elif type(access) == _PrivateAccess and _is_authenticated(request):
+        return True
+    elif type(access) == _AdminAccess and _is_admin(request):
+        return True
+    elif (type(access) == GroupAccess and _is_authenticated(request)
+          and request.user.groups.filter(name=access.group_name).exists()):
+        return True
+    return False
+
+
+def _is_authentication_required(access):
+    return type(access) in (_PrivateAccess, _AdminAccess, GroupAccess)
 
 
 def get_model_fields_by_access(model_class, access_type=None):

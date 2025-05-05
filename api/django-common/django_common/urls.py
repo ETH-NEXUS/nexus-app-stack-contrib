@@ -7,9 +7,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.routers import DefaultRouter
 from rest_framework.serializers import ListSerializer, ModelSerializer
 
-from .access import Access, AdminAccess, get_field_access, GroupAccess, PrivateAccess
+from .access import _get_field_access, _has_access
 from .clazz import create_dynamic_class
 from .string import camel_case_class_to_snake_case_string
+from .views import _bake_all_base_filter_view_sets
 
 
 @staff_member_required
@@ -83,17 +84,7 @@ class AccessControlRouter:
             if isinstance(s, ModelSerializer):
                 for field in s.Meta.model._meta.get_fields():
                     if field.name in s.fields:
-                        access = get_field_access(field)
-
-                        # Handle different access types.
-                        if type(access) == Access:
-                            continue
-                        elif type(access) == PrivateAccess and self._is_authenticated(request):
-                            continue
-                        elif type(access) == AdminAccess and self._is_admin(request):
-                            continue
-                        elif (type(access) == GroupAccess and self._is_authenticated(request)
-                              and request.user.groups.filter(name=access.group_name).exists()):
+                        if _has_access(_get_field_access(field), request):
                             continue
 
                         s.fields.pop(field.name)
@@ -103,6 +94,9 @@ class AccessControlRouter:
         return serializer
 
     def apply_access_control(self, viewset_class):
+        # TODO Move the next line somewhere else.
+        viewset_class = _bake_all_base_filter_view_sets(viewset_class)
+
         original_get_serializer = viewset_class.get_serializer
         _include_schema = self._include_schema
         _filter_fields_by_access = self._filter_fields_by_access
