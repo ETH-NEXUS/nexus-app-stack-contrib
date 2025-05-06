@@ -84,7 +84,7 @@ def _bake_all_base_filter_view_sets(cls):
 
     anonymous_static_filter_querysets = []
     authenticated_static_filter_querysets = []
-    filter_querysets = []
+    filter_queryset = None
     parameters = []
 
     model_fields = cls.serializer_class.Meta.model._meta.get_fields()
@@ -98,9 +98,9 @@ def _bake_all_base_filter_view_sets(cls):
                         authenticated_static_filter_querysets.append(static_filter_queryset)
                     else:
                         anonymous_static_filter_querysets.append(static_filter_queryset)
-                if filter_queryset := get_filter_queryset(c):
-                    filter_querysets.append(filter_queryset)
-                if static_filter_queryset or filter_queryset:
+                if tmp_filter_queryset := get_filter_queryset(c):
+                    filter_queryset = tmp_filter_queryset
+                if static_filter_queryset or tmp_filter_queryset:
                     parameters.extend(tmp_parameters)
                     continue
                 if c == cls:
@@ -116,8 +116,8 @@ def _bake_all_base_filter_view_sets(cls):
                     queryset = f(self.request.query_params, self.data, queryset)
             for f in anonymous_static_filter_querysets:
                 queryset = f(self.request.query_params, self.data, queryset)
-            for f in filter_querysets:
-                queryset = f(self, queryset)
+            if filter_queryset:
+                queryset = filter_queryset(self, queryset)
             return queryset
 
         cls.filter_queryset = new_filter_queryset
