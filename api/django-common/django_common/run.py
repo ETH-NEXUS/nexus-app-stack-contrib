@@ -1,8 +1,10 @@
 # Code copied from https://stackoverflow.com/questions/52232177/runtimeerror-timeout-context-manager-should-be-used-inside-a-task#69514930
-# An asyncio run implementation that runs in any environment e.g. Gunicorn.
+# A(n) (a)syncio run implementation that runs in any environment e.g. Gunicorn.
 import asyncio
 import threading
-from typing import Awaitable, TypeVar
+from typing import Awaitable, Callable, TypeVar
+
+from asgiref.sync import sync_to_async
 
 
 def _start_background_loop(loop):
@@ -39,3 +41,7 @@ def asyncio_gather(*futures, return_exceptions=False) -> list:
         return await asyncio.gather(*futures, return_exceptions=return_exceptions)
 
     return asyncio.run_coroutine_threadsafe(gather(), loop=_LOOP).result()
+
+
+def syncio_run(func: Callable[[], T], timeout=30) -> T:
+    return asyncio_run(sync_to_async(func)(), timeout=timeout)
