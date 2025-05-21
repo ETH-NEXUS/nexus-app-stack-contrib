@@ -226,8 +226,20 @@ class TableFunctionQuery(Query):
 
 class TableFunctionQuerySet(QuerySet):
     def __init__(self, model=None, query=None, using=None, hints=None):
-        super().__init__(model, query, using, hints)
-        self.query = query or TableFunctionQuery(self.model)
+        super().__init__(model, query or TableFunctionQuery(model), using, hints)
+        self.optional_table_function_params = []
+
+    def _fetch_all(self) -> None:
+        if self.optional_table_function_params:
+            # This is done in this method so that a "queryset.all()" clone also works.
+            table_function = self.query.alias_map[self.query.get_initial_alias()]
+            tmp = table_function.table_function_params
+            try:
+                table_function.table_function_params = tmp + self.optional_table_function_params
+                return super()._fetch_all()
+            finally:
+                table_function.table_function_params = tmp
+        return super()._fetch_all()
 
     def table_function(self, **table_function_params: Dict[str, Any]) -> 'TableFunctionQuerySet':
         self.query.table_function(**table_function_params)
@@ -239,7 +251,7 @@ class TableFunctionQuerySet(QuerySet):
             params = list(
                 next(filter(lambda x: x.level == 0, table_function_params)).params.values()
             )  # type: List[Any]
-            self.query.alias_map[self.query.get_initial_alias()].table_function_params.extend(params)
+            self.optional_table_function_params.extend(params)
         except StopIteration:
             # Do nothing.
             pass
