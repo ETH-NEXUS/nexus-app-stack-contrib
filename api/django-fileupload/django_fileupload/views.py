@@ -11,6 +11,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from django.utils import timezone
 
 from django_common.postgresql import exclusive_insert_table_lock
 from django_common.renderers import PassthroughRenderer
@@ -27,6 +28,10 @@ class FileUploadBatchViewSet(
     queryset = FileUploadBatch.objects.all()
     serializer_class = FileUploadBatchSerializer
     parser_classes = (MultiPartParser,)
+    has_owner = True
+
+    def get_max_file_size(self, request):
+        return None
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -54,6 +59,10 @@ class FileUploadBatchViewSet(
             files = request.FILES.getlist("files")
             if self.verify_file_count(request, len(files)):
                 for file_position, file in enumerate(files):
+
+                    if self.get_max_file_size(request) and file.size > self.get_max_file_size(request):
+                        raise ValidationError(_(f"File size exceeds the maximum allowed size of {self.get_max_file_size(request) / (1024 ** 2)} MB."))
+
                     file_name_parts = os.path.splitext(file.name)
                     if self.verify_file_extension(request, file_position, file_name_parts):
                         if self.verify_file_checksum(
@@ -67,7 +76,10 @@ class FileUploadBatchViewSet(
                     raise ValidationError(_("Files with incorrect extension in the request."))
                 response = []
                 with exclusive_insert_table_lock(FileUploadBatch):
-                    file_upload_batch = FileUploadBatch.objects.create(owner=request.user)
+                    if self.has_owner:
+                        file_upload_batch = FileUploadBatch.objects.create(owner=request.user)
+                    else:
+                        file_upload_batch = FileUploadBatch.objects.create()
                     # Metadata needs to be added here as FileUpload.objects.create(...) may depend on it.
                     self.add_metadata(request, file_upload_batch)
                     for file_position, file in enumerate(files):
@@ -104,4 +116,16 @@ class FileUploadViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
+    def keep_after_deletion(self):
+        return False
+
+    def destroy(self, request, *args, **kwargs):
+        file_upload = self.get_object()
+        if self.keep_after_deletion():
+            file_upload.deleted_on = timezone.now()
+            file_upload.save()
+        else:
+            file_upload.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
     pass
