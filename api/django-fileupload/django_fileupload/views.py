@@ -5,7 +5,7 @@ from django.http import FileResponse
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema
 from python_utilities.crypto import generate_checksum_from_chunks
-from rest_framework import mixins, viewsets, status
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -15,14 +15,11 @@ from rest_framework.serializers import ValidationError
 from django_common.postgresql import exclusive_insert_table_lock
 from django_common.renderers import PassthroughRenderer
 from django_fileupload.models import FileUpload, FileUploadBatch
-from django_fileupload.serializers import (FileUploadBatchSerializer,
-                                           FileUploadSerializer, FileUploadBatchCreateSerializer)
+from django_fileupload.serializers import (FileUploadBatchCreateSerializer, FileUploadBatchSerializer,
+                                           FileUploadSerializer)
 
 
-class FileUploadBatchViewSet(
-    mixins.CreateModelMixin,
-    viewsets.GenericViewSet,
-):
+class FileUploadBatchViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     permission_classes = (IsAuthenticated,)
     queryset = FileUploadBatch.objects.all()
     serializer_class = FileUploadBatchSerializer
@@ -33,10 +30,13 @@ class FileUploadBatchViewSet(
             return FileUploadBatchCreateSerializer
         return self.serializer_class
 
-    def add_metadata(self, request, file_upload_batch):
-        pass
+    def add_metadata(self, request, create_file_upload_batch):
+        return create_file_upload_batch()
 
     def verify_file_extension(self, request, file_position, file_name_parts):
+        return True
+
+    def verify_file_name(self, request, file_position, file_name_parts, file_name):
         return True
 
     def verify_file_checksum(self, request, file_position, file_name_parts, file_checksum):
@@ -52,32 +52,47 @@ class FileUploadBatchViewSet(
     def create(self, request, *args, **kwargs):
         if request.FILES:
             files = request.FILES.getlist("files")
-            if self.verify_file_count(request, len(files)):
+            len_files = len(files)
+            if self.verify_file_count(request, len_files):
+                checksums = [None] * len_files
                 for file_position, file in enumerate(files):
                     file_name_parts = os.path.splitext(file.name)
                     if self.verify_file_extension(request, file_position, file_name_parts):
-                        if self.verify_file_checksum(
-                                request,
-                                file_position,
-                                file_name_parts,
-                                generate_checksum_from_chunks(file.chunks()),
-                        ):
-                            continue
-                        raise ValidationError(_("Incorrect or no checksums in the request."))
+                        if self.verify_file_name(request, file_position, file_name_parts, file.name):
+                            checksum = generate_checksum_from_chunks(file.chunks())
+                            if self.verify_file_checksum(
+                                    request,
+                                    file_position,
+                                    file_name_parts,
+                                    checksum
+                            ):
+                                checksums[file_position] = checksum
+                                continue
+                            raise ValidationError(_("Incorrect or no checksums in the request."))
+                        raise ValidationError(_("Files with incorrect name in the request."))
                     raise ValidationError(_("Files with incorrect extension in the request."))
                 response = []
                 with exclusive_insert_table_lock(FileUploadBatch):
-                    file_upload_batch = FileUploadBatch.objects.create(owner=request.user)
                     # Metadata needs to be added here as FileUpload.objects.create(...) may depend on it.
-                    self.add_metadata(request, file_upload_batch)
+                    file_upload_batch = self.add_metadata(request,
+                                                          lambda: FileUploadBatch.objects.create(owner=request.user))
                     for file_position, file in enumerate(files):
-                        file_upload = FileUpload.objects.create(
-                            file_upload_batch=file_upload_batch,
-                            position=file_position,
-                            file=file,
-                        )
-                        response.append({'id': file_upload.id, 'name': file_upload.name})
-
+                        try:
+                            file_upload = FileUpload.objects.get(file_upload_batch=file_upload_batch,
+                                                                 position=file_position)
+                            if checksums[file_position] == file_upload.checksum:
+                                response.append({"id": file_upload.id, "name": file_upload.name})
+                                continue
+                            raise ValidationError(_("The checksum of a file in the current upload does not match the "
+                                                    "checksum of the previously uploaded file at the same position."))
+                        except FileUpload.DoesNotExist:
+                            file_upload = FileUpload.objects.create(
+                                file_upload_batch=file_upload_batch,
+                                position=file_position,
+                                file=file,
+                            )
+                            response.append({"id": file_upload.id, "name": file_upload.name})
+                            continue
                     return Response(response, status=status.HTTP_201_CREATED)
             raise ValidationError(_("Incorrect number of files in the request."))
         raise ValidationError(_("No files in the request."))
