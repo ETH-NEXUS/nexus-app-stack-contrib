@@ -1,7 +1,8 @@
 import re
 
+from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
-from django.urls import re_path
+from django.urls import path, re_path
 from django.views.static import serve
 from rest_framework.permissions import AllowAny
 from rest_framework.routers import DefaultRouter
@@ -31,6 +32,19 @@ def static_path(prefix, view=serve, **kwargs):
     )
 
 
+def add_tags_key_in_spectacular_settings(name, description):
+    if "TAGS" not in settings.SPECTACULAR_SETTINGS:
+        settings.SPECTACULAR_SETTINGS["TAGS"] = []
+    tag = {"name": name, "description": description}
+    if tag not in settings.SPECTACULAR_SETTINGS["TAGS"]:
+        settings.SPECTACULAR_SETTINGS["TAGS"].append(tag)
+
+
+def path_with_description(route, description, *args, **kwargs):
+    add_tags_key_in_spectacular_settings(route[:route.find("/")], description)
+    return path(route, *args, **kwargs)
+
+
 def change_permission_classes(view_set, permission_classes):
     return create_dynamic_class(view_set.__name__, view_set, {"permission_classes": permission_classes})
 
@@ -42,15 +56,21 @@ class ViewSetClassNameBasedNameRouter(DefaultRouter):
             return tmp[:-len("_view_set")]
         raise ValueError
 
-    def registerViewSet(self, viewset, prefix = None):
+    def registerViewSet(self, viewset, prefix = None, description = None):
         basename = self.get_default_basename(viewset)
-        return self.register(f"{prefix + '/' if prefix else ''}{basename.replace('_', '/', 1)}", viewset, basename)
+        prefix = f"{prefix + '/' if prefix else ''}{basename.replace('_', '/', 1)}"
+        if description is not None:
+            add_tags_key_in_spectacular_settings(prefix[:prefix.find("/")], description)
+        return self.register(prefix, viewset, basename)
 
 
 class ViewSetClassNameRouter(ViewSetClassNameBasedNameRouter):
-    def __init__(self, schema, *args, **kwargs):
+    def __init__(self, schema, description = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        assert hasattr(self, "schema") is False
         self.schema = schema
+        if description is not None:
+            add_tags_key_in_spectacular_settings(schema, description)
 
     def registerViewSet(self, viewset, prefix = None):
         assert prefix is None
@@ -137,10 +157,12 @@ class PublicAccessControlRouter(AccessControlRouter):
 
 
 class ViewSetClassNameBasedNameRouterAccessControlRouter(ViewSetClassNameBasedNameRouter, AccessControlRouter):
-    def register(self, prefix, viewset, basename=None, **kwargs):
+    def register(self, prefix, viewset, basename=None, description=None, **kwargs):
         """Register a viewset with access control policies applied."""
         whitelisted_viewset = self.apply_access_control(viewset)
         super().register(prefix, whitelisted_viewset, basename, **kwargs)
+        if description is not None:
+            add_tags_key_in_spectacular_settings(prefix[:prefix.find("/")], description)
 
 
 class ViewSetClassNameRouterAccessControlRouter(ViewSetClassNameRouter, AccessControlRouter):
