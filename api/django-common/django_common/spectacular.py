@@ -42,18 +42,19 @@ class CustomSchemaGenerator(SchemaGenerator):
             }
 
         # Exclude tags without endpoints.
-        include_tags = []
-        for path in schema["paths"].values():
-            for operation in path.values():
-                for tag in operation["tags"]:
-                    if tag not in include_tags:
-                        include_tags.append(tag)
-        new_schema_tags = []
-        for include_tag in include_tags:
-            for schema_tag in schema["tags"]:
-                 if schema_tag["name"] == include_tag:
-                     new_schema_tags.append(schema_tag)
-        schema["tags"] = new_schema_tags
+        if "tags" in schema:
+            include_tags = []
+            for path in schema["paths"].values():
+                for operation in path.values():
+                    for tag in operation["tags"]:
+                        if tag not in include_tags:
+                            include_tags.append(tag)
+            new_schema_tags = []
+            for include_tag in include_tags:
+                for schema_tag in schema["tags"]:
+                     if schema_tag["name"] == include_tag:
+                         new_schema_tags.append(schema_tag)
+            schema["tags"] = new_schema_tags
 
         # Remove lock symbol.
         for path, data in schema["paths"].items():
