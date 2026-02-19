@@ -23,19 +23,29 @@ def create_model_admin(model_admin, name, model, verbose_name=None, verbose_name
     return model_admin
 
 
+def _extend_get_queryset_method(model_class, model, get_filter_queryset_function):
+    original_get_queryset = model_class.get_queryset
+    filter_queryset = get_filter_queryset_function(model)
+    if filter_queryset:
+        def new_get_queryset(self, request):
+            queryset = original_get_queryset(self, request)
+            queryset = filter_queryset(queryset, request)
+            return queryset
+
+        model_class.get_queryset = new_get_queryset
+
+
+def whitelist(get_filter_queryset_function):
+    def decorator(model_class):
+        _extend_get_queryset_method(model_class, model_class.model, get_filter_queryset_function)
+        return model_class
+    return decorator
+
+
 def register_and_whitelist(model, get_filter_queryset_function):
     def decorator(model_class):
         admin.register(model)(model_class)
-
-        original_get_queryset = model_class.get_queryset
-        filter_queryset = get_filter_queryset_function(model)
-        if filter_queryset:
-            def new_get_queryset(self, request):
-                queryset = original_get_queryset(self, request)
-                queryset = filter_queryset(queryset, request)
-                return queryset
-            model_class.get_queryset = new_get_queryset
-
+        _extend_get_queryset_method(model_class, model, get_filter_queryset_function)
         return model_class
     return decorator
 
