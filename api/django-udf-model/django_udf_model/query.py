@@ -260,6 +260,11 @@ class TableFunctionQuerySet(QuerySet):
     def _update(self, values):
         return super()._update(values)
 
+    def _clone(self):
+        c = super()._clone()
+        c.optional_table_function_params = self.optional_table_function_params
+        return c
+
 
 class TableFunctionManager(Manager):
     def get_queryset(self) -> TableFunctionQuerySet:
