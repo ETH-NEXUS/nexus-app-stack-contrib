@@ -261,6 +261,9 @@ class TableFunctionQuerySet(QuerySet):
     def _fetch_all(self):
         return self._apply_optional_table_function_params(super()._fetch_all)
 
+    def aggregate(self, *args, **kwargs):
+        return self._apply_optional_table_function_params(super().aggregate, *args, **kwargs)
+
     def add_optional_function_arguments(self, **arguments: Dict[str, Any]) -> 'TableFunctionQuerySet':
         self.optional_function_arguments |= arguments
         return self

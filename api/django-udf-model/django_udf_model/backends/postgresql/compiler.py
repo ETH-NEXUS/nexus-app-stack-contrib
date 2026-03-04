@@ -40,6 +40,10 @@ class SQLCompiler(compiler.SQLCompiler):
     pass
 
 
+class SQLAggregateCompiler(compiler.SQLAggregateCompiler):
+    pass
+
+
 class SQLInsertCompiler(compiler.SQLInsertCompiler):
 
     def as_sql(self):
