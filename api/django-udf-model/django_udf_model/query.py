@@ -12,6 +12,8 @@ from django.db.models.sql import Query
 from django.db.models.sql.datastructures import BaseTable, Join
 from django.db.models.sql.where import WhereNode
 
+from python_utilities.datastructures import AssertNoOverwriteOrderedDict
+
 
 class TableFunctionArg:
     def __init__(self, required: bool = True, default=NOT_PROVIDED):
@@ -156,7 +158,7 @@ class TableFunctionQuery(Query):
                 level = len(table_lookup.split(LOOKUP_SEP))
                 lookup_parts, field_parts, _ = self.solve_lookup_type(table_lookup)
                 path, final_field, targets, rest = self.names_to_path(
-                    field_parts, self.get_meta(), allow_many=False, fail_on_missing=True
+                    field_parts, self.get_meta(), allow_many=True, fail_on_missing=True
                 )
                 join_field = path[-1].join_field
                 model = final_field.related_model
@@ -225,44 +227,45 @@ class TableFunctionQuery(Query):
 
 
 class TableFunctionQuerySet(QuerySet):
+    overwrite_assert_message = "Duplicate optional function argument found"
+
     def __init__(self, model=None, query=None, using=None, hints=None):
         super().__init__(model, query or TableFunctionQuery(model), using, hints)
-        self.optional_table_function_params = []
-
-    def _fetch_all(self) -> None:
-        if self.optional_table_function_params:
-            # This is done in this method so that a "queryset.all()" clone also works.
-            table_function = self.query.alias_map[self.query.get_initial_alias()]
-            tmp = table_function.table_function_params
-            try:
-                table_function.table_function_params = tmp + self.optional_table_function_params
-                return super()._fetch_all()
-            finally:
-                table_function.table_function_params = tmp
-        return super()._fetch_all()
+        self.optional_function_arguments = AssertNoOverwriteOrderedDict(self.overwrite_assert_message)
 
     def table_function(self, **table_function_params: Dict[str, Any]) -> 'TableFunctionQuerySet':
         self.query.table_function(**table_function_params)
         return self
 
-    def add_optional_function_arguments(self, **table_function_params: Dict[str, Any]) -> 'TableFunctionQuerySet':
-        table_function_params = self.query.get_table_function_params(**table_function_params)
-        try:
-            params = list(
-                next(filter(lambda x: x.level == 0, table_function_params)).params.values()
-            )  # type: List[Any]
-            self.optional_table_function_params.extend(params)
-        except StopIteration:
-            # Do nothing.
-            pass
-        return self
+    def _apply_optional_table_function_params(self, function, *args, **kwargs):
+        # This happens here because the "alias_map" is only fully populated during query execution.
+        for optional_table_function_param in self.query.get_table_function_params(**self.optional_function_arguments):
+            applied = False
+            for alias in self.query.alias_map.values():
+                if optional_table_function_param.level == 0:
+                    alias.table_function_params.extend(optional_table_function_param.params.values())
+                    applied = True
+                elif isinstance(alias, TableFunctionJoin):
+                    if alias.join_field == optional_table_function_param.join_field:
+                        alias.table_function_params.extend(optional_table_function_param.params.values())
+                        applied = True
+            if applied: continue
+            raise ValueError(f"Optional argument(s) cannot be applied at level {optional_table_function_param.level}: ",
+                             f"{','.join(optional_table_function_param.params.keys())}")
+        # Set to an empty dict so that the parameters are not applied more than once.
+        self.optional_function_arguments = AssertNoOverwriteOrderedDict(self.overwrite_assert_message)
+        return function(*args, **kwargs)
 
-    def _update(self, values):
-        return super()._update(values)
+    def _fetch_all(self):
+        return self._apply_optional_table_function_params(super()._fetch_all)
+
+    def add_optional_function_arguments(self, **arguments: Dict[str, Any]) -> 'TableFunctionQuerySet':
+        self.optional_function_arguments |= arguments
+        return self
 
     def _clone(self):
         c = super()._clone()
-        c.optional_table_function_params = self.optional_table_function_params
+        c.optional_function_arguments = self.optional_function_arguments
         return c
 
 
