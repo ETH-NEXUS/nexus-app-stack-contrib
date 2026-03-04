@@ -1,10 +1,24 @@
 import functools
-from types import MappingProxyType
+from types import MappingProxyType, MethodType
 
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.functional import classproperty
 from django.utils.translation import gettext_lazy as _
+
+
+def prefetch_related(*args):
+    def decorator(model_class):
+        manager = model_class.objects
+        original_get_queryset = manager.get_queryset
+        def new_get_queryset(self):
+            queryset = original_get_queryset()
+            queryset = queryset.prefetch_related(*args)
+            return queryset
+        manager.get_queryset = MethodType(new_get_queryset, manager)
+        model_class.add_to_class("objects", manager)
+        return model_class
+    return decorator
 
 
 def model_with_custom_manager(model_class, manager_instance):
