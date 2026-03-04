@@ -237,25 +237,38 @@ class TableFunctionQuerySet(QuerySet):
         return self
 
     def _apply_optional_table_function_params(self, function, *args, **kwargs):
-        # This happens here because the "alias_map" is only fully populated during query execution.
-        for optional_table_function_param in self.query.get_table_function_params(**self.optional_function_arguments):
-            applied = False
-            if optional_table_function_param.level == 0:
-                self.query.table_function_params.append(optional_table_function_param)
-                applied = True
-            for alias in self.query.alias_map.values():
-                if optional_table_function_param.level == 0:
-                    alias.table_function_params.extend(optional_table_function_param.params.values())
-                    applied = True
-                elif isinstance(alias, TableFunctionJoin):
-                    if alias.join_field == optional_table_function_param.join_field:
-                        alias.table_function_params.extend(optional_table_function_param.params.values())
-                        applied = True
-            if applied: continue
-            raise ValueError(f"Optional argument(s) cannot be applied at level {optional_table_function_param.level}: "
-                             f"{','.join(optional_table_function_param.params.keys())}")
-        # Clear the dict so that the parameters are not applied more than once.
-        self.optional_function_arguments.clear()
+        # This is done here because the "alias_map" is only fully populated during query execution.
+        if len(self.optional_function_arguments) > 0:
+            optional_table_function_params = self.query.get_table_function_params(**self.optional_function_arguments)
+            table_function = self.query.alias_map[self.query.get_initial_alias()]
+            tmp_copies = []
+            aliases = self.query.alias_map.values()
+            for alias in aliases:
+                if isinstance(alias, (TableFunction, TableFunctionJoin)):
+                    tmp_copies.append(alias.table_function_params.copy())
+            try:
+                for optional_table_function_param in optional_table_function_params:
+                    applied = False
+                    for alias in aliases:
+                        if optional_table_function_param.level == 0:
+                            if isinstance(alias, TableFunction):
+                                alias.table_function_params.extend(optional_table_function_param.params.values())
+                                applied = True
+                        elif isinstance(alias, TableFunctionJoin):
+                            if alias.join_field == optional_table_function_param.join_field:
+                                alias.table_function_params.extend(optional_table_function_param.params.values())
+                                applied = True
+                    if applied: continue
+                    raise ValueError(f"Optional argument(s) cannot be applied at level "
+                                     f"{optional_table_function_param.level}: "
+                                     f"{','.join(optional_table_function_param.params.keys())}")
+
+                return function(*args, **kwargs)
+            finally:
+                for i, alias in enumerate(aliases):
+                    if isinstance(alias, (TableFunction, TableFunctionJoin)):
+                        alias.table_function_params = tmp_copies[i]
+
         return function(*args, **kwargs)
 
     def _fetch_all(self):
@@ -265,12 +278,13 @@ class TableFunctionQuerySet(QuerySet):
         return self._apply_optional_table_function_params(super().aggregate, *args, **kwargs)
 
     def add_optional_function_arguments(self, **arguments: Dict[str, Any]) -> 'TableFunctionQuerySet':
-        self.optional_function_arguments |= arguments
-        return self
+        q = self._chain()
+        q.optional_function_arguments |= arguments
+        return q
 
     def _clone(self):
         c = super()._clone()
-        c.optional_function_arguments = self.optional_function_arguments
+        c.optional_function_arguments = self.optional_function_arguments.copy()
         return c
 
 
