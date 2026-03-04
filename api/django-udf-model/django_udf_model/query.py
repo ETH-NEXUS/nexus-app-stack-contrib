@@ -227,11 +227,10 @@ class TableFunctionQuery(Query):
 
 
 class TableFunctionQuerySet(QuerySet):
-    overwrite_assert_message = "Duplicate optional function argument found"
 
     def __init__(self, model=None, query=None, using=None, hints=None):
         super().__init__(model, query or TableFunctionQuery(model), using, hints)
-        self.optional_function_arguments = AssertNoOverwriteOrderedDict(self.overwrite_assert_message)
+        self.optional_function_arguments = AssertNoOverwriteOrderedDict("Duplicate optional function argument found")
 
     def table_function(self, **table_function_params: Dict[str, Any]) -> 'TableFunctionQuerySet':
         self.query.table_function(**table_function_params)
@@ -241,6 +240,9 @@ class TableFunctionQuerySet(QuerySet):
         # This happens here because the "alias_map" is only fully populated during query execution.
         for optional_table_function_param in self.query.get_table_function_params(**self.optional_function_arguments):
             applied = False
+            if optional_table_function_param.level == 0:
+                self.query.table_function_params.append(optional_table_function_param)
+                applied = True
             for alias in self.query.alias_map.values():
                 if optional_table_function_param.level == 0:
                     alias.table_function_params.extend(optional_table_function_param.params.values())
@@ -250,10 +252,10 @@ class TableFunctionQuerySet(QuerySet):
                         alias.table_function_params.extend(optional_table_function_param.params.values())
                         applied = True
             if applied: continue
-            raise ValueError(f"Optional argument(s) cannot be applied at level {optional_table_function_param.level}: ",
+            raise ValueError(f"Optional argument(s) cannot be applied at level {optional_table_function_param.level}: "
                              f"{','.join(optional_table_function_param.params.keys())}")
-        # Set to an empty dict so that the parameters are not applied more than once.
-        self.optional_function_arguments = AssertNoOverwriteOrderedDict(self.overwrite_assert_message)
+        # Clear the dict so that the parameters are not applied more than once.
+        self.optional_function_arguments.clear()
         return function(*args, **kwargs)
 
     def _fetch_all(self):
