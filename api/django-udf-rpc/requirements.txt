@@ -1,2 +1,1 @@
 -e /nexus-app-stack-contrib/api/django-udf-model
-django-modern-rpc==1.1.0
