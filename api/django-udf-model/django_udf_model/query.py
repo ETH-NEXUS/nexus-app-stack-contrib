@@ -12,7 +12,7 @@ from django.db.models.sql import Query
 from django.db.models.sql.datastructures import BaseTable, Join
 from django.db.models.sql.where import WhereNode
 
-from python_utilities.datastructures import AssertNoOverwriteOrderedDict
+from python_utilities.data_structures import AssertNoOverwriteOrderedDict
 
 
 class TableFunctionArg:
