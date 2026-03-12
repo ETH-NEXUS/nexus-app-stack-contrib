@@ -242,7 +242,7 @@ class TableFunctionQuerySet(QuerySet):
             optional_table_function_params = self.query.get_table_function_params(**self.optional_function_arguments)
             table_function = self.query.alias_map[self.query.get_initial_alias()]
             tmp_copies = []
-            aliases = self.query.alias_map.values()
+            aliases = list(self.query.alias_map.values())
             for alias in aliases:
                 if isinstance(alias, (TableFunction, TableFunctionJoin)):
                     tmp_copies.append(alias.table_function_params.copy())
@@ -265,9 +265,11 @@ class TableFunctionQuerySet(QuerySet):
 
                 return function(*args, **kwargs)
             finally:
-                for i, alias in enumerate(aliases):
+                i = 0
+                for alias in aliases:
                     if isinstance(alias, (TableFunction, TableFunctionJoin)):
                         alias.table_function_params = tmp_copies[i]
+                        i += 1
 
         return function(*args, **kwargs)
 
