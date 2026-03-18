@@ -44,18 +44,19 @@ def _whitelist_inline(get_filter_queryset_function):
                 formset = original_get_formset(self, request, obj, **kwargs)
                 assert not hasattr(formset, "_request")
                 formset._request = request
+
+                original_add_fields = formset.add_fields
+                def new_add_fields(self, form, index):
+                    # The super method must be called first, as this is where the "id" field is added to the form.
+                    result = original_add_fields(self, form, index)
+                    if index is not None:
+                        id_field = form.fields["id"]
+                        id_field.queryset = filter_queryset_function(id_field.queryset, self._request)
+                    return result
+                formset.add_fields = new_add_fields
+
                 return formset
             model_admin_class.get_formset = new_get_formset
-
-            original_add_fields = model_admin_class.formset.add_fields
-            def new_add_fields(self, form, index):
-                # The super method must be called first, as this is where the "id" field is added to the form.
-                result = original_add_fields(self, form, index)
-                if index is not None:
-                    id_field = form.fields["id"]
-                    id_field.queryset = filter_queryset_function(id_field.queryset, self._request)
-                return result
-            model_admin_class.formset.add_fields = new_add_fields
 
         return model_admin_class
     return decorator
